@@ -47,6 +47,7 @@ met_type: "MET"
 deepTauVersion: 2p1
 region: SR
 channels: ""
+unc: ""
 QCDRegions:
   - OS_Iso
   - SS_Iso
@@ -272,15 +273,14 @@ ellypse_limits_boosted:
 
 mass_cut_limits:
   bb_m_vis:
-    boosted:
-      - 50
-      - 160
-    other:
-      - 30
-      - 140
-  tautau_m_vis:
-      - 55
+      - 90
       - 150
+  tautau_m_vis:
+      - 60
+      - 150
+  SVfit_m:
+      - 75
+      - 155
 
 scales:
   - Up

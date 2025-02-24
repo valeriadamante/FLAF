@@ -182,14 +182,14 @@ if __name__ == "__main__":
         # print(x_bins)
         for channel in global_cfg_dict['channels_to_consider']:
             # print(channel,cat)
-            dfWrapped_sig.df = dfWrapped_sig.df.Filter(f"SVfit_valid >0 && OS_Iso && {channel} && {cat}")
+            dfWrapped_sig.df = dfWrapped_sig.df.Filter(f"SVfit_valid >0 && OS_Iso && {channel} && {cat} && SVfit_m > 70")
             dfWrapped_sig = FilterForbJets(cat,dfWrapped_sig)
 
             df_sig_old = dfWrapped_sig.df
             df_sig_new = dfWrapped_sig.df
             # df_sig_new = df_sig_new.Range(100000)
             if args.checkBckg:
-                dfWrapped_bckg.df = dfWrapped_bckg.df.Filter(f"SVfit_valid>0 && OS_Iso && {channel} && {cat}")
+                dfWrapped_bckg.df = dfWrapped_bckg.df.Filter(f"SVfit_valid>0 && OS_Iso && {channel} && {cat} && SVfit_m > 70")
                 dfWrapped_bckg = FilterForbJets(cat,dfWrapped_bckg)
                 df_bckg_old = dfWrapped_bckg.df
                 df_bckg_new = dfWrapped_bckg.df
@@ -206,21 +206,35 @@ if __name__ == "__main__":
 
                 # SQUARE CUT
                 min_tt_sig, max_tt_sig, min_bb_sig, max_bb_sig = GetMassesQuantilesJoint(df_sig_new, tt_mass, bb_mass, quantile_sig)
-                mbb_max = max_bb_sig #min(max_bb_sig, max_bb_bckg)
-                mtt_max = max_tt_sig #min(max_tt_sig, max_tt_bckg)
-                mbb_min = min_bb_sig #max(min_bb_sig, min_bb_bckg)
-                mtt_min = min_tt_sig #max(min_tt_sig, min_tt_bckg)
+                print("including 68% sig")
+                print(f"{tt_mass}> {min_tt_sig} && {tt_mass} < {max_tt_sig}, {bb_mass}< {max_bb_sig} && {bb_mass} > {min_bb_sig}")
+                if args.checkBckg:
+                    min_tt_bckg1, max_tt_bckg1, min_bb_bckg1, max_bb_bckg1 = GetMassesQuantilesJoint(df_bckg_new, tt_mass, bb_mass, 0.68)
+                    print("including 68% tt")
+                    print(f"{tt_mass}< {min_tt_bckg1} && {tt_mass} > {max_tt_bckg1}, {bb_mass}< {max_bb_bckg1} && {bb_mass} > {min_bb_bckg1}")
+                    print("including 90% tt")
+                    min_tt_bckg2, max_tt_bckg2, min_bb_bckg2, max_bb_bckg2 = GetMassesQuantilesJoint(df_bckg_new, tt_mass, bb_mass, 0.9)
+                    print(f"{tt_mass}< {min_tt_bckg2} && {tt_mass} > {max_tt_bckg2}, {bb_mass}< {max_bb_bckg2} && {bb_mass} > {min_bb_bckg2}")
+
+                mbb_max = 150 #min(max_bb_sig, max_bb_bckg)
+                mtt_max = 155 #min(max_tt_sig, max_tt_bckg)
+                mbb_min = 90 #max(min_bb_sig, min_bb_bckg)
+                mtt_min = 75 #max(min_tt_sig, min_tt_bckg)
+                print(f"{tt_mass}< {mtt_max} && {tt_mass} > {mtt_min} && {bb_mass}< {mbb_max} && {bb_mass} > {mbb_min}")
                 n_after_sig_lin = df_sig_old.Filter(f"{tt_mass}< {mtt_max} && {tt_mass} > {mtt_min}").Filter(f"{bb_mass}< {mbb_max} && {bb_mass} > {mbb_min}").Count().GetValue()
                 percentage_sig_lin =  0 if n_in_sig==0 else n_after_sig_lin/n_in_sig
                 n_after_bckg_lin = 0
                 percentage_bckg_lin = 0
                 ssqrtb_lin = 0
+                print(f"percentage_sig_lin = {percentage_sig_lin} ")
                 if args.checkBckg:
                     n_after_bckg_lin = df_bckg_old.Filter(f"{tt_mass}< {mtt_max} && {tt_mass} > {mtt_min}").Filter(f"{bb_mass}< {mbb_max} && {bb_mass} > {mbb_min}").Count().GetValue()
                     print(f"dopo taglio lineare {n_after_sig_lin} eventi di segnale e {n_after_bckg_lin} eventi di fondo")
                     percentage_bckg_lin =  n_after_bckg_lin/n_in_bckg if n_in_bckg!=0 else 0
                     ssqrtb_lin = 0 if n_after_bckg_lin ==0 else n_after_sig_lin/math.sqrt(n_after_bckg_lin)
-
+                    print(f"percentage_bckg_lin = {percentage_bckg_lin} ")
+                    print(f"ssqrtb = {ssqrtb_lin} ")
+                '''
                 # ELLIPTIC CUT
                 A, B_final, C, D_final = GetEllipticCut(df_sig_new, tt_mass, bb_mass, quantile_sig)
                 new_par_A = (math.ceil(A*100)/100)  # -> 2.36
@@ -257,12 +271,12 @@ if __name__ == "__main__":
             # mbb_max = 140
             # mtt_min = 55
             # mtt_max = 150
-
+            '''
             if args.wantPlots:
-                mbb_min = 50
-                mbb_max = 150
-                mtt_min = 50
-                mtt_max = 160
+                # mbb_min = 50
+                # mbb_max = 150
+                # mtt_min = 50
+                # mtt_max = 160
                 new_par_A = 121
                 new_par_B = 26
                 new_par_C = 115
@@ -270,7 +284,8 @@ if __name__ == "__main__":
 
                 if args.res and args.mass:
                     hist_sig=df_sig_old.Histo2D(GetModel2D(x_bins, y_bins),bb_mass, tt_mass).GetValue()
-                hist_bckg=df_bckg_old.Histo2D(GetModel2D(x_bins, y_bins),bb_mass, tt_mass).GetValue()
+                if args.checkBckg:
+                    hist_bckg=df_bckg_old.Histo2D(GetModel2D(x_bins, y_bins),bb_mass, tt_mass).GetValue()
                 outFile_prefix = f"/afs/cern.ch/work/v/vdamante/FLAF/Studies/MassCuts/Square/MassCut2DPlots/Run2_{args.year}/{cat}/"
                 if args.res and args.mass:
                     outFile_prefix+=f"{args.res}/{args.mass}/"
@@ -285,8 +300,9 @@ if __name__ == "__main__":
                     Ellypse.plot_2D_histogram(hist_sig, f"signal hist {cat} {channel}","$m_{bb}$", "$m_{\\tau\\tau}$", None, f"{finalFileName}_ellypse_Square", f"{args.year}", ellypse_par,rectangle_coordinates)
                     print(f"{finalFileName}.png")
                     print(f"{finalFileName}_ellypse_Square.png")
-                finalFileName = f"{outFile_prefix}{channel}_background"
-                plot_2D_histogram(hist_bckg, f" {cat} {channel}","$m_{bb}$", "$m_{\\tau\\tau}$", None, finalFileName, f"Run2_{args.year}", rectangle_coordinates)
-                Ellypse.plot_2D_histogram(hist_bckg, f"signal hist {cat} {channel}","$m_{bb}$", "$m_{\\tau\\tau}$", None, f"{finalFileName}_ellypse_Square", f"{args.year}", ellypse_par,rectangle_coordinates)
-                print(f"{finalFileName}.png")
-                print(f"{finalFileName}_ellypse_Square.png")
+                if args.checkBckg:
+                    finalFileName = f"{outFile_prefix}{channel}_background"
+                    plot_2D_histogram(hist_bckg, f" {cat} {channel}","$m_{bb}$", "$m_{\\tau\\tau}$", None, finalFileName, f"Run2_{args.year}", rectangle_coordinates)
+                    Ellypse.plot_2D_histogram(hist_bckg, f"signal hist {cat} {channel}","$m_{bb}$", "$m_{\\tau\\tau}$", None, f"{finalFileName}_ellypse_Square", f"{args.year}", ellypse_par,rectangle_coordinates)
+                    print(f"{finalFileName}.png")
+                    print(f"{finalFileName}_ellypse_Square.png")

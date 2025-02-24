@@ -281,9 +281,22 @@ class DataFrameBuilderForHistograms(DataFrameBuilderBase):
         self.df = self.df.Define("Legacy_region", legacy_region_definition)
 
     def defineCRs(self): # needs inv mass def
-        SR_mass_limits_bb_boosted = self.config['mass_cut_limits']['bb_m_vis']['boosted']
-        SR_mass_limits_bb = self.config['mass_cut_limits']['bb_m_vis']['other']
+        # SR_mass_limits_bb_boosted = self.config['mass_cut_limits']['bb_m_vis']['boosted']
+        # SR_mass_limits_bb = self.config['mass_cut_limits']['bb_m_vis']['other']
         SR_mass_limits_tt = self.config['mass_cut_limits']['tautau_m_vis']
+        # self.df = self.df.Define("SR_tt", f"return (tautau_m_vis > {SR_mass_limits_tt[0]} && tautau_m_vis  < {SR_mass_limits_tt[1]});")
+
+        SR_mass_limits_bb = self.config['mass_cut_limits']['bb_m_vis']
+        self.df = self.df.Define("SR_bb", f"(bb_m_vis > {SR_mass_limits_bb[0]} && bb_m_vis < {SR_mass_limits_bb[1]});")
+        self.df = self.df.Define("SR_bb_boosted", f"(bb_m_vis_softdrop > {SR_mass_limits_bb[0]} && bb_m_vis_softdrop < {SR_mass_limits_bb[1]});")
+
+        SR_mass_limits_tt_SV = self.config['mass_cut_limits']['SVfit_m']
+        self.df = self.df.Define("SR_tt", f"return (SVfit_m > {SR_mass_limits_tt_SV[0]} && SVfit_m  < {SR_mass_limits_tt_SV[1]});")
+
+        self.df = self.df.Define("SR", f" SR_tt &&  SR_bb")
+        self.df = self.df.Define("SR_boosted", f" SR_tt &&  SR_bb_boosted")
+
+
         ellypse_limts_A = self.config['ellypse_limits']['A']
         ellypse_limts_B = self.config['ellypse_limits']['B']
         ellypse_limts_C = self.config['ellypse_limits']['C']
@@ -294,18 +307,15 @@ class DataFrameBuilderForHistograms(DataFrameBuilderBase):
         ellypse_limts_boosted_C = self.config['ellypse_limits_boosted']['C']
         ellypse_limts_boosted_D = self.config['ellypse_limits_boosted']['D']
 
-        self.df = self.df.Define("SR_tt", f"return (tautau_m_vis > {SR_mass_limits_tt[0]} && tautau_m_vis  < {SR_mass_limits_tt[1]});")
-        self.df = self.df.Define("SR_bb", f"(bb_m_vis > {SR_mass_limits_bb[0]} && bb_m_vis < {SR_mass_limits_bb[1]});")
-        self.df = self.df.Define("SR_bb_boosted", f"(bb_m_vis_softdrop > {SR_mass_limits_bb_boosted[0]} && bb_m_vis_softdrop < {SR_mass_limits_bb_boosted[1]});")
-        self.df = self.df.Define("SR", f" SR_tt &&  SR_bb")
-        self.df = self.df.Define("SR_boosted", f" SR_tt &&  SR_bb_boosted")
-        self.df = self.df.Define("DYCR", "if(muMu || eE) {return (tautau_m_vis < 100 && tautau_m_vis > 80);} return true;")
-        self.df = self.df.Define("DYCR_boosted", "DYCR")
         self.df = self.df.Define("SR_ellyptical", f"(((SVfit_m-{ellypse_limts_A})*(SVfit_m-{ellypse_limts_A})/({ellypse_limts_B}*{ellypse_limts_B})) + ((bb_m_vis-{ellypse_limts_C})*(bb_m_vis-{ellypse_limts_C})/({ellypse_limts_D}*{ellypse_limts_D}))) < 1 ")
         self.df = self.df.Define("SR_ellyptical_boosted", "SR_boosted" ) #f"(((SVfit_m-{ellypse_limts_boosted_A})*(SVfit_m-{ellypse_limts_boosted_A})/({ellypse_limts_boosted_B}*{ellypse_limts_boosted_A})) + ((bb_m_vis_softdrop-{ellypse_limts_boosted_C})*(bb_m_vis_softdrop-{ellypse_limts_boosted_C})/({ellypse_limts_boosted_D}*{ellypse_limts_boosted_D}))) < 1 ")
         # self.df = self.df.Define("SR_ellyptical_boosted_tt", "SVfit_m < 152 && SVfit_m > 80 ")
         # self.df = self.df.Define("SR_ellyptical_boosted_bb", "bb_m_vis_softdrop < 160 && bb_m_vis_softdrop > 90 ")
         # self.df = self.df.Define("SR_ellyptical_boosted", "SR_ellyptical_boosted_tt && SR_ellyptical_boosted_bb")
+
+
+        self.df = self.df.Define("DYCR", "if(muMu || eE) {return (tautau_m_vis < 100 && tautau_m_vis > 80);} return true;")
+        self.df = self.df.Define("DYCR_boosted", "DYCR")
 
         TTCR_mass_limits_eTau = self.config['TTCR_mass_limits']['eTau']
         TTCR_mass_limits_muTau = self.config['TTCR_mass_limits']['muTau']

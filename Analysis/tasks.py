@@ -7,7 +7,7 @@ import luigi
 from RunKit.run_tools import ps_call
 from RunKit.crabLaw import cond as kInit_cond, update_kinit_thread
 from run_tools.law_customizations import Task, HTCondorWorkflow, copy_param,get_param_value
-from AnaProd.tasks import AnaTupleTask, DataMergeTask, AnaCacheTupleTask, DataCacheMergeTask
+from AnaProd.tasks import AnaTupleTask, DataMergeTask, AnaCacheTupleTask, DataCacheMergeTask, AnaCacheTupleUncTask
 
 
 unc_cfg_dict = None
@@ -87,7 +87,7 @@ class HistProducerFileTask(Task, HTCondorWorkflow, law.LocalWorkflow):
         if len(branch_set) > 0:
             reqs['anaTuple'] = AnaTupleTask.req(self, branches=tuple(branch_set),customisations=self.customisations)
         if len(branch_set_cache) > 0:
-            reqs['anaCacheTuple'] = AnaCacheTupleTask.req(self, branches=tuple(branch_set_cache),customisations=self.customisations)
+            reqs['anaCacheTuple'] = AnaCacheTupleUncTask.req(self, branches=tuple(branch_set_cache),customisations=self.customisations)
         if need_data:
             reqs['dataMergeTuple'] = DataMergeTask.req(self, branches=(),customisations=self.customisations)
         if need_data_cache:
@@ -104,7 +104,7 @@ class HistProducerFileTask(Task, HTCondorWorkflow, law.LocalWorkflow):
         else:
             deps.append(AnaTupleTask.req(self, max_runtime=AnaTupleTask.max_runtime._default, branch=prod_br, branches=(prod_br,),customisations=self.customisations))
             if need_cache:
-                deps.append(AnaCacheTupleTask.req(self, max_runtime=AnaCacheTupleTask.max_runtime._default, branch=prod_br, branches=(prod_br,),customisations=self.customisations))
+                deps.append(AnaCacheTupleUncTask.req(self, max_runtime=AnaCacheTupleUncTask.max_runtime._default, branch=prod_br, branches=(prod_br,),customisations=self.customisations))
         return deps
 
     def create_branch_map(self):

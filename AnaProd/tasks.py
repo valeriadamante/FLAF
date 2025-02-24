@@ -15,6 +15,13 @@ from Common.Utilities import SerializeObjectToString
 from AnaProd.anaCacheProducer import addAnaCaches
 
 
+unc_cfg_dict = None
+def load_unc_config(unc_cfg):
+    global unc_cfg_dict
+    with open(unc_cfg, 'r') as f:
+        unc_cfg_dict = yaml.safe_load(f)
+    return unc_cfg_dict
+
 def getCustomisationSplit(customisations):
     customisation_dict = {}
     if customisations is None or len(customisations) == 0: return {}
@@ -306,9 +313,7 @@ class AnaCacheTupleTask(Task, HTCondorWorkflow, law.LocalWorkflow):
     def output(self):
         sample_name, sample_type = self.branch_data
         outFileName = os.path.basename(self.input()[0].path)
-        # outDir = os.path.join('anaCacheTuples', self.period, sample_name, self.version)
-        # finalFile = os.path.join(outDir, outFileName)
-        output_path = os.path.join('anaCacheTuples', self.period, sample_name,self.version, outFileName)#self.version, self.period, sample_name, outFileName)
+        output_path = os.path.join('anaCacheTuples', self.period, sample_name,self.version, outFileName)
         return self.remote_target(output_path, fs=self.fs_anaCacheTuple)
 
     def run(self):
@@ -332,13 +337,32 @@ class AnaCacheTupleTask(Task, HTCondorWorkflow, law.LocalWorkflow):
             print(f"considering sample {sample_name}, {sample_type} and file {input_file.path}")
             customisation_dict = getCustomisationSplit(self.customisations)
             deepTauVersion = customisation_dict['deepTauVersion'] if 'deepTauVersion' in customisation_dict.keys() else ""
-            with input_file.localize("r") as local_input, self.output().localize("w") as outFile:
-                anaCacheTupleProducer_cmd = ['python3', producer_anacachetuples,'--inFileName', local_input.path, '--outFileName', outFile.path,  '--uncConfig', unc_config, '--globalConfig', global_config, '--channels', channels ]
-                if compute_unc_variations and sample_type != 'data':
-                    anaCacheTupleProducer_cmd.extend(['--compute_unc_variations', 'True'])
+            with input_file.localize("r") as local_input:
+                anaCacheTupleProducer_cmd = ['python3', producer_anacachetuples,'--inFileName', local_input.path, '--uncConfig', unc_config, '--globalConfig', global_config, '--channels', channels ]
                 if deepTauVersion!="":
                     anaCacheTupleProducer_cmd.extend([ '--deepTauVersion', deepTauVersion])
-                ps_call(anaCacheTupleProducer_cmd, env=self.cmssw_env, verbose=1)
+
+                if compute_unc_variations and sample_type != 'data':
+                    # print(compute_unc_variations)
+                    anaCacheTupleProducer_cmd.extend(['--compute_unc_variations', 'True'])
+                    unc_cfg_dict = load_unc_config(unc_config)
+                    for shapeName in ['Central']+unc_cfg_dict['shape']:
+                        output_path = os.path.join('anaCacheTuples', self.period, sample_name,self.version)
+                        outFileName = os.path.basename(self.input()[0].path)
+                        outFileName_split = outFileName.split('.')
+                        outFileName_final =f'{outFileName_split[0]}_{shapeName}.root'
+                        tmp_outfile_merge = os.path.join(output_path,f'tmp_{outFileName_split[0]}',outFileName_final)
+                        tmp_outfile_merge_remote = self.remote_target(tmp_outfile_merge, fs=self.fs_anaCacheTuple)
+                        # print(tmp_outfile_merge_remote)
+                        # print(outFileName_final)
+                        with tmp_outfile_merge_remote.localize("w") as tmp_outfile_merge_unc:
+                            anaCacheTupleProducer_cmd.extend(['--shapeName', shapeName])
+                            anaCacheTupleProducer_cmd.extend(['--outFileName', tmp_outfile_merge_unc.path])
+                            ps_call(anaCacheTupleProducer_cmd, env=self.cmssw_env, verbose=1)
+                else:
+                    with self.output().localize("w") as outFile:
+                        anaCacheTupleProducer_cmd.extend(['--outFileName', outFile.path])
+                        ps_call(anaCacheTupleProducer_cmd, env=self.cmssw_env, verbose=1)
             print(f"finished to produce anacachetuple")
 
         finally:
@@ -346,6 +370,176 @@ class AnaCacheTupleTask(Task, HTCondorWorkflow, law.LocalWorkflow):
             kInit_cond.notify_all()
             kInit_cond.release()
             thread.join()
+
+class AnaCacheTupleUncTask(Task, HTCondorWorkflow, law.LocalWorkflow):
+    max_runtime = copy_param(HTCondorWorkflow.max_runtime, 50.0)
+    n_cpus = copy_param(HTCondorWorkflow.n_cpus, 1)
+
+    def workflow_requires(self):
+        branches_set = set()
+        for branch_idx, (sample_name, sample_type, input_file, ana_br_idx, uncName) in self.branch_map.items():
+            if ana_br_idx not in branches_set:
+                branches_set.add(ana_br_idx)
+        return { "anaTuple" :AnaTupleTask.req(self, branches=tuple(branches_set),customisations=self.customisations)}
+
+    def requires(self):
+        sample_name, sample_type, input_file, ana_br_idx, uncName =  self.branch_data
+        return [
+            AnaTupleTask.req(self, max_runtime=AnaTupleTask.max_runtime._default, branch=ana_br_idx, branches=(ana_br_idx,),customisations=self.customisations)
+        ]
+
+    def create_branch_map(self):
+        customisation_dict = getCustomisationSplit(self.customisations)
+        store_noncentral = customisation_dict['store_noncentral']=='True' if 'store_noncentral' in customisation_dict.keys() else self.global_params.get('store_noncentral', False)
+        unc = customisation_dict['unc'] if 'unc' in customisation_dict.keys() else 'all'
+        unc_config = os.path.join(self.ana_path(), 'config',self.period, f'weights.yaml')
+        unc_cfg_dict = load_unc_config(unc_config)
+        branches = {}
+        anaProd_branch_map = AnaTupleTask.req(self, branch=-1, branches=()).branch_map
+        br_idx_final = 0
+        all_uncNames = ['Central']
+        if unc != 'all':
+            all_uncNames = [unc]
+        else:
+            if store_noncentral:
+                all_uncNames.extend(unc_cfg_dict['shape'])
+        for uncName in all_uncNames:
+            if uncName.startswith('QCD'):continue
+            for ana_br_idx, (sample_id, sample_name, sample_type, input_file) in anaProd_branch_map.items():
+                    if sample_type == 'data' and uncName !='Central': continue
+                    branches[br_idx_final] = (sample_name, sample_type, input_file, ana_br_idx, uncName)
+                    br_idx_final += 1
+        # print(branches)
+        return branches
+
+    def output(self):
+        sample_name, sample_type, input_file, ana_br_idx, uncName = self.branch_data
+        out_file_name = os.path.basename(self.input()[0].path)
+        out_file_name_split = out_file_name.split('.')
+        out_dir_tmp = os.path.join(
+            "anaCacheTuples", self.period, sample_name, self.version,
+            f"tmp_{out_file_name_split[0]}"
+        )
+        out_dir = os.path.join(
+            "anaCacheTuples", self.period, sample_name, self.version
+        )
+        out_file_name_final_tmp = f'{out_file_name_split[0]}_{uncName}.root'
+        final_file_tmp = os.path.join(out_dir_tmp, out_file_name_final_tmp)
+        final_file = os.path.join(out_dir, out_file_name)
+        if os.path.exists(os.path.join('/eos/user/v/vdamante/HH_bbtautau_resonant_Run2/',final_file)):
+            return self.remote_target(final_file, fs=self.fs_anaCacheTuple)
+        return self.remote_target(final_file_tmp, fs=self.fs_anaCacheTuple)
+
+    def run(self):
+        sample_name, sample_type, input_file, ana_br_idx, uncName = self.branch_data
+        unc_config = os.path.join(self.ana_path(), 'config',self.period, f'weights.yaml')
+        producer_anacachetuples = os.path.join(self.ana_path(), 'AnaProd', 'anaCacheTupleProducer.py')
+        global_config = os.path.join(self.ana_path(), 'config','HH_bbtautau', f'global.yaml')
+        thread = threading.Thread(target=update_kinit_thread)
+        customisation_dict = getCustomisationSplit(self.customisations)
+        channels = customisation_dict['channels'] if 'channels' in customisation_dict.keys() else self.global_params['channelSelection']
+        store_noncentral = customisation_dict['store_noncentral']=='True' if 'store_noncentral' in customisation_dict.keys() else self.global_params.get('store_noncentral', False)
+
+        compute_unc_variations = customisation_dict['compute_unc_variations']=='True' if 'compute_unc_variations' in customisation_dict.keys() else self.global_params.get('compute_unc_variations', False)
+        #Channels from the yaml are a list, but the format we need for the ps_call later is 'ch1,ch2,ch3', basically join into a string separated by comma
+        if type(channels) == list:
+            channels = ','.join(channels)
+        thread.start()
+        producer_anacachetuples = os.path.join(self.ana_path(), 'AnaProd', 'anaCacheTupleProducer.py')
+        unc_config = os.path.join(self.ana_path(), 'config', self.period, 'weights.yaml')
+        global_config = os.path.join(self.ana_path(), 'config', 'HH_bbtautau', 'global.yaml')
+        try:
+            job_home, remove_job_home = self.law_job_home()
+            input_file = self.input()[0]
+            print(f"considering sample {sample_name}, {sample_type} and file {input_file.path}")
+            customisation_dict = getCustomisationSplit(self.customisations)
+            deepTauVersion = customisation_dict['deepTauVersion'] if 'deepTauVersion' in customisation_dict.keys() else ""
+
+            with input_file.localize("r") as local_input, self.output().localize("w") as output_file:
+                anaCacheTupleProducer_cmd = [
+                    'python3', producer_anacachetuples,
+                    '--inFileName', local_input.path,
+                    '--uncConfig', unc_config,
+                    '--globalConfig', global_config,
+                    '--shapeName', uncName,
+                    '--outFileName', output_file.path,
+                     '--channels', channels
+                ]
+                if deepTauVersion!="":
+                    anaCacheTupleProducer_cmd.extend([ '--deepTauVersion', deepTauVersion])
+                if compute_unc_variations:
+                    print(compute_unc_variations)
+                    anaCacheTupleProducer_cmd.extend(['--compute_unc_variations', 'True'])
+                ps_call(anaCacheTupleProducer_cmd, env=self.cmssw_env, verbose=1)
+            print(f"finished to produce anacachetuple")
+        finally:
+            kInit_cond.acquire()
+            kInit_cond.notify_all()
+            kInit_cond.release()
+            thread.join()
+
+class AnaCacheTupleMergeTask(Task, HTCondorWorkflow, law.LocalWorkflow):
+    max_runtime = copy_param(HTCondorWorkflow.max_runtime, 30.0)
+
+    def workflow_requires(self):
+        branch_set = set()
+        for idx, (sample_name, ana_br_idx, branches_idx) in self.branch_map.items():
+            branch_set.update(branches_idx)
+        return { "anaCacheTuple" : AnaCacheTupleUncTask.req(self, branches=tuple(branch_set)) }
+
+    def requires(self):
+        sample_name, ana_br_idx, branches_idx = self.branch_data
+        return [
+            AnaCacheTupleUncTask.req(self, max_runtime=AnaCacheTupleUncTask.max_runtime._default, branch=prod_br, branches=(prod_br,))
+            for prod_br in branches_idx
+        ]
+
+    def create_branch_map(self):
+        branches_dict = {}
+        anaCache_branch_map = AnaCacheTupleUncTask.req(self, branch=-1, branches=()).branch_map
+        unique_samples = {}
+        for br_idx, (sample_name, sample_type, input_file, ana_br_idx, uncName) in anaCache_branch_map.items():
+            if sample_name not in unique_samples.keys():
+                unique_samples[sample_name] = {}
+            if ana_br_idx not in unique_samples[sample_name].keys():
+                unique_samples[sample_name][ana_br_idx] = []
+
+            unique_samples[sample_name][ana_br_idx].append(br_idx)
+        k = 0
+        for i, (sample_name, subdct) in enumerate(unique_samples.items()):
+            for j, (ana_br_idx, branches) in enumerate(subdct.items()):
+                branches_dict[k] = (sample_name, ana_br_idx, branches)
+                k+=1
+        # print(branches_dict)
+        return branches_dict
+
+    def output(self):
+        sample_name, ana_br_idx, branches = self.branch_data
+        out_file_name = os.path.basename(self.input()[0].path)
+        out_file_name_split = out_file_name.split('.')[0].split('_')
+        out_file_name_final = f"{out_file_name_split[0]}_{out_file_name_split[1]}.root"
+        # print(out_file_name_split)
+        out_dir = os.path.join(
+            "anaCacheTuples", self.period, sample_name, self.version
+        )
+        final_file = os.path.join(out_dir, out_file_name_final)
+        return self.remote_target(final_file, fs=self.fs_anaCacheTuple)
+
+    def run(self):
+        sample_name, ana_br_idx, br_indices = self.branch_data
+        local_inputs = []
+        with contextlib.ExitStack() as stack:
+            local_inputs = [stack.enter_context(inp.localize('r')).path for inp in self.input()]
+
+            with self.output().localize("w") as outfile:
+                if len(local_inputs) > 1:
+                    output_path = outfile.path
+                    hadd_cmd = ["hadd", "-f209", "-n10", output_path] + local_inputs
+                    ps_call(hadd_cmd, verbose=1)
+                else:
+                    shutil.copy(local_inputs[0], output_path)
+        print(f"Merged AnaCacheTuples for {sample_name} successfully!")
+
 
 
 class DataCacheMergeTask(Task, HTCondorWorkflow, law.LocalWorkflow):
