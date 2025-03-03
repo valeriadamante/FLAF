@@ -10,6 +10,8 @@ if __name__ == "__main__":
 
 from Analysis.hh_bbtautau import *
 import Common.Utilities
+from RunKit.run_tools import ps_call
+
 def AddMissingHistograms(fileInitial, all_histnames):
     missing_hists = {}
     inFile = ROOT.TFile.Open(fileInitial, "UPDATE")
@@ -54,16 +56,16 @@ unc_names = [
 
 
 histograms_initials = {
-    "2016":"/eos/user/v/vdamante/HH_bbtautau_resonant_Run2/histograms/Ell_MassCut_2p1/SC/SR/Run2_2016/merged/kinFit_m/kinFit_m.root",
-    "2016_HIPM":"/eos/user/v/vdamante/HH_bbtautau_resonant_Run2/histograms/Ell_MassCut_2p1/SC/SR/Run2_2016_HIPM/merged/kinFit_m/kinFit_m.root",
-    "2017":"/eos/user/v/vdamante/HH_bbtautau_resonant_Run2/histograms/Ell_MassCut_2p1/SC/SR/Run2_2017/merged/kinFit_m/kinFit_m.root",
-    "2018":"/eos/user/v/vdamante/HH_bbtautau_resonant_Run2/histograms/Ell_MassCut_2p1/SC/SR/Run2_2018/merged/kinFit_m/kinFit_m.root"
+    "2016":"/eos/user/v/vdamante/HH_bbtautau_resonant_Run2/histograms/New_MassCut_2p5/SC/SR/Run2_2016/merged/kinFit_m/kinFit_m.root",
+    "2016_HIPM":"/eos/user/v/vdamante/HH_bbtautau_resonant_Run2/histograms/New_MassCut_2p5/SC/SR/Run2_2016_HIPM/merged/kinFit_m/kinFit_m.root",
+    "2017":"/eos/user/v/vdamante/HH_bbtautau_resonant_Run2/histograms/New_MassCut_2p5/SC/SR/Run2_2017/merged/kinFit_m/kinFit_m.root",
+    "2018":"/eos/user/v/vdamante/HH_bbtautau_resonant_Run2/histograms/New_MassCut_2p5/SC/SR/Run2_2018/merged/kinFit_m/kinFit_m.root"
 }
 histograms_initials_boosted = {
-    "2016": "/eos/user/v/vdamante/HH_bbtautau_resonant_Run2/histograms/Ell_MassCut_2p1/SC/SR/Run2_2016/merged/bbtautau_mass_met_boosted/bbtautau_mass_met_boosted.root",
-    "2016_HIPM": "/eos/user/v/vdamante/HH_bbtautau_resonant_Run2/histograms/Ell_MassCut_2p1/SC/SR/Run2_2016_HIPM/merged/bbtautau_mass_met_boosted/bbtautau_mass_met_boosted.root",
-    "2017":"/eos/user/v/vdamante/HH_bbtautau_resonant_Run2/histograms/Ell_MassCut_2p1/SC/SR/Run2_2017/merged/bbtautau_mass_met_boosted/bbtautau_mass_met_boosted.root",
-    "2018":"/eos/user/v/vdamante/HH_bbtautau_resonant_Run2/histograms/Ell_MassCut_2p1/SC/SR/Run2_2018/merged/bbtautau_mass_met_boosted/bbtautau_mass_met_boosted.root"
+    "2016": "/eos/user/v/vdamante/HH_bbtautau_resonant_Run2/histograms/New_MassCut_2p5/SC/SR/Run2_2016/merged/bbtautau_mass_met_boosted/bbtautau_mass_met_boosted.root",
+    "2016_HIPM": "/eos/user/v/vdamante/HH_bbtautau_resonant_Run2/histograms/New_MassCut_2p5/SC/SR/Run2_2016_HIPM/merged/bbtautau_mass_met_boosted/bbtautau_mass_met_boosted.root",
+    "2017":"/eos/user/v/vdamante/HH_bbtautau_resonant_Run2/histograms/New_MassCut_2p5/SC/SR/Run2_2017/merged/bbtautau_mass_met_boosted/bbtautau_mass_met_boosted.root",
+    "2018":"/eos/user/v/vdamante/HH_bbtautau_resonant_Run2/histograms/New_MassCut_2p5/SC/SR/Run2_2018/merged/bbtautau_mass_met_boosted/bbtautau_mass_met_boosted.root"
 }
 
 

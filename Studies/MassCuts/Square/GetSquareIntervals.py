@@ -118,6 +118,38 @@ def GetMassesQuantilesJoint(df_cat, tt_mass, bb_mass, quantile_max):
     return min_tt_int,max_tt_int,min_bb_int,max_bb_int
 
 
+def GetMassesQuantiles(df_cat, massName, quantile_max):
+    np_dict_cat = df_cat.AsNumpy([massName])
+
+    mass_values = np_dict_cat[massName]
+
+    lower, upper = 0, 1  # Limiti iniziali in percentili
+    den = df_cat.Count().GetValue()
+    num = den
+    perc = 0. # num / den
+
+    while perc < quantile_max:  # Continua fino a superare quantile_max
+        p_low = np.percentile(mass_values, lower, axis=0)
+        p_high = np.percentile(mass_values, upper, axis=0)
+
+        num = df_cat.Filter(f"{massName} >= {p_low} && {massName} < {p_high}")\
+                    .Count().GetValue()
+        perc = num / den
+
+
+        if perc < quantile_max:
+            upper += (100 - upper) * 0.1  # Espandi i limiti per includere più dati
+
+    # Arrotondiamo i limiti finali
+    min_tt_int = math.floor(p_low / 10) * 10
+    max_tt_int = math.ceil(p_high / 10) * 10
+
+    # print(f"mbb = {min_bb_int}, {max_bb_int}")
+    # print(f"mtt = {min_tt_int}, {max_tt_int}")
+
+    return min_tt_int,max_tt_int
+
+
 def GetEllipticCut(df_cat, tt_mass, bb_mass, quantile_max):
     np_dict_cat = df_cat.AsNumpy([tt_mass, bb_mass])
     mbb = np_dict_cat[bb_mass]

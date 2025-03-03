@@ -9,12 +9,6 @@ import argparse
 import csv
 
 def write_stuff_on_csv(csv_filename,csv_header,row_to_write):
-    # csv_filename = "output.csv"
-
-    # Intestazione del CSV
-    # csv_header = ["mass", "cat", "ssqrt(b) in", "mtt", "mbb", "%s (lin)", "%b (lin)", "ssqrt(b) lin",
-                # "A", "B", "C", "D", "%s (ell)", "%b (ell)", "ssqrt(b) ell"]
-
     # Apri il file CSV in modalità scrittura
     with open(csv_filename, mode="a", newline="") as file:
         writer = csv.writer(file)
@@ -103,15 +97,14 @@ def getDataFramesFromFile(infile, res=None, mass=None,printout=False):
                 new_data.append(line)
                 if printout:print(line)
     else: new_data = data_into_list
-    # if res and mass: print(new_data)
+    # print(new_data)
     inFiles = Utilities.ListToVector(new_data)
     df_initial = ROOT.RDataFrame("Events", inFiles)
-    # print(df_initial.Count().GetValue())
     return df_initial
 
 def buildDfWrapped(df_initial,global_cfg_dict,year,df_initial_cache=None):
-    dfBuilder_init = DataFrameBuilderForHistograms(df_initial,global_cfg_dict, f"Run2_{year}",deepTauVersion="v2p5")
-    dfBuilder_cache_init = DataFrameBuilderForHistograms(df_initial_cache,global_cfg_dict, f"Run2_{year}",deepTauVersion="v2p5")
+    dfBuilder_init = DataFrameBuilderForHistograms(df_initial,global_cfg_dict, f"Run2_{year}")
+    dfBuilder_cache_init = DataFrameBuilderForHistograms(df_initial_cache,global_cfg_dict, f"Run2_{year}")
     # print(dfBuilder_init.df.Count().GetValue())
     # print(dfBuilder_cache_init.df.Count().GetValue())
     if df_initial_cache:
@@ -125,12 +118,16 @@ if __name__ == "__main__":
     parser.add_argument('--year', required=False, type=str, default='2018')
     parser.add_argument('--cat', required=False, type=str, default='res2b_cat3')
     parser.add_argument('--channels', required=False, type=str, default='tauTau')
-    parser.add_argument('--res', required=False, type=str, default=None)
-    parser.add_argument('--mass', required=False, type=str, default=None)
+    parser.add_argument('--res', required=False, type=str, default="Radion")
+    parser.add_argument('--mass', required=False, type=str, default="1250")
     parser.add_argument('--wantPlots', required=False, type=bool, default=False)
     parser.add_argument('--wantPrint', required=False, type=bool, default=False)
+    parser.add_argument('--calculate_ell_intervals', required=False, type=bool, default=False)
+    parser.add_argument('--ell_params', required=False, type=str, default="")
+    parser.add_argument('--calculate_square_intervals', required=False, type=bool, default=False)
+    parser.add_argument('--square_params', required=False, type=str, default="")
     parser.add_argument('--checkBckg', required=False, type=bool, default=False)
-    parser.add_argument('--outFileCsv', required=False, type=str, default="output.csv")
+    parser.add_argument('--outFileCsv', required=False, type=str, default="")
 
     args = parser.parse_args()
     headers_dir = os.path.dirname(os.path.abspath(__file__))
@@ -167,16 +164,12 @@ if __name__ == "__main__":
         df_bckg = getDataFramesFromFile(TTFiles)
         df_bckg_cache = getDataFramesFromFile(TTCaches)
         dfWrapped_bckg = buildDfWrapped(df_bckg,global_cfg_dict,args.year,df_bckg_cache)
-        # quantile_bckg = 0.9
-    wantSequential=False
+    reduce_size=True
     tt_mass = "SVfit_m"
-    # tt_mass = "tautau_m_vis"
-    # print(dfWrapped_sig.df.Filter("SVfit_valid>=0").Count().GetValue())
-    # dfWrapped_sig.df.Filter("SVfit_valid>=0").Display({"SVfit_m","SVfit_valid","SVfit_pt"}).Print()
     for cat in  args.cat.split(','):
-        print(cat)
+        # print(cat)
         bb_mass = "bb_m_vis" if cat != 'boosted_cat3' else "bb_m_vis_softdrop"
-        print(bb_mass)
+        # print(bb_mass)
         y_bins = hist_cfg_dict[bb_mass]['x_rebin']['other']
         x_bins = hist_cfg_dict[tt_mass]['x_rebin']['other']
         # print(x_bins)
@@ -185,29 +178,30 @@ if __name__ == "__main__":
             dfWrapped_sig.df = dfWrapped_sig.df.Filter(f"SVfit_valid >0 && OS_Iso && {channel} && {cat} && SVfit_m > 70")
             dfWrapped_sig = FilterForbJets(cat,dfWrapped_sig)
 
-            df_sig_old = dfWrapped_sig.df
             df_sig_new = dfWrapped_sig.df
-            # df_sig_new = df_sig_new.Range(100000)
+            if reduce_size :
+                df_sig_new = df_sig_new.Range(100000)
             if args.checkBckg:
                 dfWrapped_bckg.df = dfWrapped_bckg.df.Filter(f"SVfit_valid>0 && OS_Iso && {channel} && {cat} && SVfit_m > 70")
                 dfWrapped_bckg = FilterForbJets(cat,dfWrapped_bckg)
-                df_bckg_old = dfWrapped_bckg.df
-                df_bckg_new = dfWrapped_bckg.df
-            # df_bckg_new = df_bckg_new.Range(100000)
-            if args.wantPrint:
-                # INITIALLY
-                n_in_sig = df_sig_old.Count().GetValue()
-                n_in_bckg = 0
-                ssqrtb_in = 0
-                if args.checkBckg:
-                    n_in_bckg = df_bckg_old.Count().GetValue()
-                    print(f"inizialmente {n_in_sig} eventi di segnale e {n_in_bckg} eventi di fondo")
-                    ssqrtb_in =0 if n_in_bckg == 0 else  n_in_sig/math.sqrt(n_in_bckg)
 
-                # SQUARE CUT
-                min_tt_sig, max_tt_sig, min_bb_sig, max_bb_sig = GetMassesQuantilesJoint(df_sig_new, tt_mass, bb_mass, quantile_sig)
+                df_bckg_new = dfWrapped_bckg.df
+                if reduce_size: df_bckg_new = df_bckg_new.Range(100000)
+
+            # INITIALLY
+            n_in_sig = df_sig_new.Count().GetValue()
+            n_in_bckg = 0
+            ssqrtb_in = 0
+            if args.checkBckg:
+                n_in_bckg = df_bckg_new.Count().GetValue()
+                print(f"inizialmente {n_in_sig} eventi di segnale e {n_in_bckg} eventi di fondo")
+                ssqrtb_in =0 if n_in_bckg == 0 else  n_in_sig/math.sqrt(n_in_bckg)
+
+            # SQUARE CUT
+            if args.calculate_square_intervals:
+                mtt_min, mtt_max, mbb_min, mbb_max = GetMassesQuantilesJoint(df_sig_new, tt_mass, bb_mass, quantile_sig)
                 print("including 68% sig")
-                print(f"{tt_mass}> {min_tt_sig} && {tt_mass} < {max_tt_sig}, {bb_mass}< {max_bb_sig} && {bb_mass} > {min_bb_sig}")
+                print(f"{tt_mass}> {mtt_min} && {tt_mass} < {mtt_max}, {bb_mass}< {mbb_max} && {bb_mass} > {mbb_min}")
                 if args.checkBckg:
                     min_tt_bckg1, max_tt_bckg1, min_bb_bckg1, max_bb_bckg1 = GetMassesQuantilesJoint(df_bckg_new, tt_mass, bb_mass, 0.68)
                     print("including 68% tt")
@@ -216,80 +210,77 @@ if __name__ == "__main__":
                     min_tt_bckg2, max_tt_bckg2, min_bb_bckg2, max_bb_bckg2 = GetMassesQuantilesJoint(df_bckg_new, tt_mass, bb_mass, 0.9)
                     print(f"{tt_mass}< {min_tt_bckg2} && {tt_mass} > {max_tt_bckg2}, {bb_mass}< {max_bb_bckg2} && {bb_mass} > {min_bb_bckg2}")
 
-                mbb_max = 150 #min(max_bb_sig, max_bb_bckg)
-                mtt_max = 155 #min(max_tt_sig, max_tt_bckg)
-                mbb_min = 90 #max(min_bb_sig, min_bb_bckg)
-                mtt_min = 75 #max(min_tt_sig, min_tt_bckg)
-                print(f"{tt_mass}< {mtt_max} && {tt_mass} > {mtt_min} && {bb_mass}< {mbb_max} && {bb_mass} > {mbb_min}")
-                n_after_sig_lin = df_sig_old.Filter(f"{tt_mass}< {mtt_max} && {tt_mass} > {mtt_min}").Filter(f"{bb_mass}< {mbb_max} && {bb_mass} > {mbb_min}").Count().GetValue()
-                percentage_sig_lin =  0 if n_in_sig==0 else n_after_sig_lin/n_in_sig
-                n_after_bckg_lin = 0
-                percentage_bckg_lin = 0
-                ssqrtb_lin = 0
-                print(f"percentage_sig_lin = {percentage_sig_lin} ")
-                if args.checkBckg:
-                    n_after_bckg_lin = df_bckg_old.Filter(f"{tt_mass}< {mtt_max} && {tt_mass} > {mtt_min}").Filter(f"{bb_mass}< {mbb_max} && {bb_mass} > {mbb_min}").Count().GetValue()
-                    print(f"dopo taglio lineare {n_after_sig_lin} eventi di segnale e {n_after_bckg_lin} eventi di fondo")
-                    percentage_bckg_lin =  n_after_bckg_lin/n_in_bckg if n_in_bckg!=0 else 0
-                    ssqrtb_lin = 0 if n_after_bckg_lin ==0 else n_after_sig_lin/math.sqrt(n_after_bckg_lin)
-                    print(f"percentage_bckg_lin = {percentage_bckg_lin} ")
-                    print(f"ssqrtb = {ssqrtb_lin} ")
-                '''
-                # ELLIPTIC CUT
+            if args.square_params:
+                masses = args.square_params.split(",")
+                mtt_min, mtt_max, mbb_min, mbb_max = masses[0],masses[1],masses[2],masses[3]
+                print("mtt_min, mtt_max, mbb_min, mbb_max")
+                print(mtt_min, mtt_max, mbb_min, mbb_max)
+            else:
+                mtt_min, mtt_max, mbb_min, mbb_max = 75,155,90,150
+
+            print(f"{tt_mass}< {mtt_max} && {tt_mass} > {mtt_min} && {bb_mass}< {mbb_max} && {bb_mass} > {mbb_min}")
+            n_after_sig_lin = df_sig_new.Filter(f"{tt_mass}< {mtt_max} && {tt_mass} > {mtt_min}").Filter(f"{bb_mass}< {mbb_max} && {bb_mass} > {mbb_min}").Count().GetValue()
+            percentage_sig_lin =  0 if n_in_sig==0 else n_after_sig_lin/n_in_sig
+            n_after_bckg_lin = 0
+            percentage_bckg_lin = 0
+            ssqrtb_lin = 0
+            print(f"percentage_sig_lin = {percentage_sig_lin} ")
+            if args.checkBckg:
+                n_after_bckg_lin = df_bckg_new.Filter(f"{tt_mass}< {mtt_max} && {tt_mass} > {mtt_min}").Filter(f"{bb_mass}< {mbb_max} && {bb_mass} > {mbb_min}").Count().GetValue()
+                print(f"dopo taglio lineare {n_after_sig_lin} eventi di segnale e {n_after_bckg_lin} eventi di fondo")
+                percentage_bckg_lin =  n_after_bckg_lin/n_in_bckg if n_in_bckg!=0 else 0
+                ssqrtb_lin = 0 if n_after_bckg_lin ==0 else n_after_sig_lin/math.sqrt(n_after_bckg_lin)
+                print(f"percentage_bckg_lin = {percentage_bckg_lin} ")
+                print(f"ssqrtb = {ssqrtb_lin} ")
+            # Ellyptic CUT
+            if args.calculate_ell_intervals:
                 A, B_final, C, D_final = GetEllipticCut(df_sig_new, tt_mass, bb_mass, quantile_sig)
-                new_par_A = (math.ceil(A*100)/100)  # -> 2.36
-                new_par_B = (math.ceil(B_final*100)/100)  # -> 2.36
-                new_par_C = (math.ceil(C*100)/100)  # -> 2.36
-                new_par_D = (math.ceil(D_final*100)/100)  # -> 2.36
                 # new_pars = (math.floor(v*100)/100)  # -> 2.35
                 # print(f"(({tt_mass} - {new_par_A})*({tt_mass} - {new_par_A}) / ({new_par_B}*{new_par_B}) + ({bb_mass} - {new_par_C})*({bb_mass} - {new_par_C}) / ({new_par_D}*{new_par_D})) < 1")
 
-                n_after_sig_ell =  df_sig_old.Filter(f"(({tt_mass} - {new_par_A})*({tt_mass} - {new_par_A}) / ({new_par_B}*{new_par_B}) + ({bb_mass} - {new_par_C})*({bb_mass} - {new_par_C}) / ({new_par_D}*{new_par_D})) < 1").Count().GetValue()
-                percentage_sig_ell =  n_after_sig_ell/n_in_sig if n_in_bckg!=0 else 0
-                n_after_bckg_ell = 0
-                percentage_bckg_ell = 0
-                ssqrtb_ell = 0
-                if args.checkBckg:
-                    n_after_bckg_ell = df_bckg_old.Filter(f"(({tt_mass} - {new_par_A})*({tt_mass} - {new_par_A}) / ({new_par_B}*{new_par_B}) + ({bb_mass} - {new_par_C})*({bb_mass} - {new_par_C}) / ({new_par_D}*{new_par_D})) < 1").Count().GetValue()
-                    print(f"dopo taglio ellittico {n_after_sig_ell} eventi di segnale e {n_after_bckg_ell} eventi di fondo")
-                    percentage_bckg_ell =  n_after_bckg_ell/n_in_bckg if n_in_bckg!=0 else 0
-                    ssqrtb_ell = n_after_sig_ell/math.sqrt(n_after_bckg_ell) if n_after_bckg_ell!=0 else 0
+            if args.ell_params:
+                ellypse_params = args.ell_params.split(",")
+                A, B_final, C, D_final = ellypse_params[0],ellypse_params[1],ellypse_params[2],ellypse_params[3]
+            else:
+                A, B_final, C, D_final = 121,26,115,36
 
-                print(f"| {args.mass} | {cat} | {ssqrtb_in} | {mtt_min}, {mtt_max} | {mbb_min}, {mbb_max} | {percentage_sig_lin} | {percentage_bckg_lin} |  {ssqrtb_lin}| {new_par_A} | {new_par_B} | {new_par_C} | {new_par_D} | {percentage_sig_ell} | {percentage_bckg_ell} |  {ssqrtb_ell} |" )
-                csv_header = ["mass","cat","ssqrt(b) in","mtt min ", "mtt max", "mbb min","mbb max","%s (lin)","%b (lin)"," ssqrt(b) lin","A","B","C","D","%s (ell)","%b (ell)"," ssqrt(b) ell"]
-                row_to_write = [args.mass, cat, ssqrtb_in, mtt_min, mtt_max, mbb_min, mbb_max, percentage_sig_lin, percentage_bckg_lin,  ssqrtb_lin, new_par_A, new_par_B, new_par_C, new_par_D, percentage_sig_ell, percentage_bckg_ell,  ssqrtb_ell]
+            new_par_A = (math.ceil(A*100)/100)  # -> 2.36
+            new_par_B = (math.ceil(B_final*100)/100)  # -> 2.36
+            new_par_C = (math.ceil(C*100)/100)  # -> 2.36
+            new_par_D = (math.ceil(D_final*100)/100)  # -> 2.36
+
+            # print(f"{tt_mass}< {mtt_max} && {tt_mass} > {mtt_min} && {bb_mass}< {mbb_max} && {bb_mass} > {mbb_min}")
+            n_after_sig_ell =  df_sig_new.Filter(f"(({tt_mass} - {new_par_A})*({tt_mass} - {new_par_A}) / ({new_par_B}*{new_par_B}) + ({bb_mass} - {new_par_C})*({bb_mass} - {new_par_C}) / ({new_par_D}*{new_par_D})) < 1").Count().GetValue()
+            percentage_sig_ell =  n_after_sig_ell/n_in_sig if n_in_bckg!=0 else 0
+            print(f"percentage_sig_ell = {percentage_sig_ell} ")
+
+            n_after_bckg_ell = 0
+            percentage_bckg_ell = 0
+            ssqrtb_ell = 0
+            if args.checkBckg:
+                n_after_bckg_ell = df_bckg_new.Filter(f"(({tt_mass} - {new_par_A})*({tt_mass} - {new_par_A}) / ({new_par_B}*{new_par_B}) + ({bb_mass} - {new_par_C})*({bb_mass} - {new_par_C}) / ({new_par_D}*{new_par_D})) < 1").Count().GetValue()
+                print(f"dopo taglio ellittico {n_after_sig_ell} eventi di segnale e {n_after_bckg_ell} eventi di fondo")
+                percentage_bckg_ell =  n_after_bckg_ell/n_in_bckg if n_in_bckg!=0 else 0
+                ssqrtb_ell = n_after_sig_ell/math.sqrt(n_after_bckg_ell) if n_after_bckg_ell!=0 else 0
+                print(f"percentage_bckg_ell = {percentage_bckg_ell} ")
+                print(f"ssqrtb = {ssqrtb_ell} ")
+
+            if args.outFileCsv:
+                csv_header = ["mass","cat","ssqrtb_in","mtt_min","mtt_max","mbb_min","mbb_max","percentageSig_lin","percentageBckg_lin","ssqrtb_lin","A","B","C","D","percentageSig_ell","percentageBckg_ell","ssqrtb_ell"]
+                row_to_write = [args.mass, cat, ssqrtb_in, f"{mtt_min}, {mtt_max}", f"{mbb_min}, {mbb_max}",
+                                percentage_sig_lin, percentage_bckg_lin, ssqrtb_lin,
+                                new_par_A, new_par_B, new_par_C, new_par_D,
+                                percentage_sig_ell, percentage_bckg_ell, ssqrtb_ell]
                 write_stuff_on_csv(args.outFileCsv,csv_header,row_to_write)
-                # csv_header = ["mass", "cat", "ssqrt(b) in", "mtt", "mbb", "%s (lin)", "%b (lin)", "ssqrt(b) lin",
-                # "A", "B", "C", "D", "%s (ell)", "%b (ell)", "ssqrt(b) ell"]
 
-        # writer.writerow([args.mass, cat, ssqrtb_in, f"{mtt_min}, {mtt_max}", f"{mbb_min}, {mbb_max}",
-        #                 percentage_sig_lin, percentage_bckg_lin, ssqrtb_lin,
-        #                 new_par_A, new_par_B, new_par_C, new_par_D,
-        #                 percentage_sig_ell, percentage_bckg_ell, ssqrtb_ell])
 
-            # mbb_min = 30
-            # mbb_max = 140
-            # mtt_min = 55
-            # mtt_max = 150
-            '''
             if args.wantPlots:
-                # mbb_min = 50
-                # mbb_max = 150
-                # mtt_min = 50
-                # mtt_max = 160
-                new_par_A = 121
-                new_par_B = 26
-                new_par_C = 115
-                new_par_D = 36
-
-                if args.res and args.mass:
-                    hist_sig=df_sig_old.Histo2D(GetModel2D(x_bins, y_bins),bb_mass, tt_mass).GetValue()
-                if args.checkBckg:
-                    hist_bckg=df_bckg_old.Histo2D(GetModel2D(x_bins, y_bins),bb_mass, tt_mass).GetValue()
                 outFile_prefix = f"/afs/cern.ch/work/v/vdamante/FLAF/Studies/MassCuts/Square/MassCut2DPlots/Run2_{args.year}/{cat}/"
                 if args.res and args.mass:
+                    hist_sig=df_sig_new.Histo2D(GetModel2D(x_bins, y_bins),bb_mass, tt_mass).GetValue()
                     outFile_prefix+=f"{args.res}/{args.mass}/"
-                else:
+                if args.checkBckg:
+                    hist_bckg=df_bckg_new.Histo2D(GetModel2D(x_bins, y_bins),bb_mass, tt_mass).GetValue()
                     outFile_prefix+=f"bckg/"
                 os.makedirs(outFile_prefix,exist_ok=True)
                 rectangle_coordinates = mbb_max, mbb_min, mtt_max, mtt_min
