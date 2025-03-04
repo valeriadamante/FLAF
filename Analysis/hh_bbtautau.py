@@ -333,7 +333,7 @@ class DataFrameBuilderForHistograms(DataFrameBuilderBase):
 
 
         self.df = self.df.Define("TTCR", f"""
-                                if(eTau || muTau || tauTau) {{ return !(SR);
+                                if(eTau || muTau || tauTau) {{ return (SVfit_m > 70 && SVfit_valid>0 && !(SR));
                                 }};
                                 if(muMu) {{return (tautau_m_vis < {TTCR_mass_limits_muMu[0]} || tautau_m_vis > {TTCR_mass_limits_muMu[1]});
                                  }};

@@ -75,7 +75,6 @@ def get_scale_factor_error(eff_data, eff_mc, err_data, err_mc):
         return SF_error
 
 def defineTriggerWeightsErrors(dfBuilder):
-
     for scale in ['Up', 'Down']:
         ### diTau - for tauTau ###
         dfBuilder.df = dfBuilder.df.Define(

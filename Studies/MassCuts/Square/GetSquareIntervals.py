@@ -123,18 +123,21 @@ def GetMassesQuantiles(df_cat, massName, quantile_max):
 
     mass_values = np_dict_cat[massName]
 
-    lower, upper = 0, 1  # Limiti iniziali in percentili
+    lower, upper = 20, 60 # Limiti iniziali in percentili
     den = df_cat.Count().GetValue()
     num = den
     perc = 0. # num / den
 
     while perc < quantile_max:  # Continua fino a superare quantile_max
+        # p_high =np.quantile(mass_values, quantile_max)
+        # p_low =np.quantile(mass_values, 1-quantile_max)
         p_low = np.percentile(mass_values, lower, axis=0)
         p_high = np.percentile(mass_values, upper, axis=0)
 
         num = df_cat.Filter(f"{massName} >= {p_low} && {massName} < {p_high}")\
                     .Count().GetValue()
         perc = num / den
+        print(perc, num, den)
 
 
         if perc < quantile_max:

@@ -52,13 +52,10 @@ def GetModel2D(x_bins, y_bins):#hist_cfg, var1, var2):
 def getDataFramesFromFile(infile, res=None, mass=None,printout=False):
     my_file = open(infile, "r")
     data = my_file.read()
-    data_into_list = data.split("\n")
-    for linentry in data_into_list:
-        linentry.replace("SC/","CC/")
-    # print(data_into_list)
-    new_data = data_into_list
-    # if res and mass: print(new_data)
-    inFiles = Utilities.ListToVector(new_data)
+    data_into_list = []
+    for linentry in data.split("\n"):
+        data_into_list.append(linentry.replace("SC/","CC/"))
+    inFiles = Utilities.ListToVector(data_into_list)
     df_initial = ROOT.RDataFrame("Events", inFiles)
     return df_initial
 
@@ -119,24 +116,30 @@ if __name__ == "__main__":
             dfWrapped_bckg.df = dfWrapped_bckg.df.Filter(sel_str)
             dfWrapped_bckg = FilterForbJets(cat,dfWrapped_bckg)
             df_bckg_new = dfWrapped_bckg.df
+
+
+
+            not_in_DYZone = f"{tt_mass} < 100 && {tt_mass} > 80"
+            if args.bckgtype == 'TT':
+                print("adding not in dy zone")
+                df_bckg_new = df_bckg_new.Filter(f"!({not_in_DYZone})")
             df_bckg_new = df_bckg_new.Range(100000)
-
-
+            print(df_bckg_new.Count().GetValue())
             # SQUARE CUT
             if args.calculate_square_intervals:
-                print(f"{tt_mass}> {mtt_min} && {tt_mass} < {mtt_max}")
+                # print(f"{tt_mass}> {mtt_min} && {tt_mass} < {mtt_max}")
                 min_tt_bckg1, max_tt_bckg1 = GetMassesQuantiles(df_bckg_new, tt_mass, 0.68)
-                print("including 68% bckg")
-                print(f"{tt_mass}> {min_tt_bckg1} && {tt_mass} < {max_tt_bckg1}")
+                print(f"including 68% bckg : {tt_mass}> {min_tt_bckg1} && {tt_mass} < {max_tt_bckg1}")
                 min_tt_bckg2, max_tt_bckg2 = GetMassesQuantiles(df_bckg_new, tt_mass, 0.90)
-                print("including 90% bckg")
-                print(f"{tt_mass}> {min_tt_bckg2} && {tt_mass} < {max_tt_bckg2}")
+                print(f"including 90% bckg : {tt_mass}> {min_tt_bckg2} && {tt_mass} < {max_tt_bckg2}")
+                print()
 
             if args.square_params:
                 masses = args.square_params.split(",")
                 mtt_min, mtt_max = masses[0],masses[1]
             elif args.calculate_square_intervals:
                 mtt_min, mtt_max = min_tt_bckg1,max_tt_bckg1
+                # mtt_min, mtt_max = min_tt_bckg2,max_tt_bckg2
             else:
                 mtt_min, mtt_max = 80,100
 
@@ -146,7 +149,8 @@ if __name__ == "__main__":
             ssqrtb_lin = 0
 
             n_before_bckg_lin = df_bckg_new.Count().GetValue()
-            n_after_bckg_lin = df_bckg_new.Filter(f"{tt_mass}< {mtt_max} && {tt_mass} > {mtt_min}").Count().GetValue()
 
+            n_after_bckg_lin = df_bckg_new.Filter(f"{tt_mass}< {mtt_max} && {tt_mass} > {mtt_min} ").Count().GetValue()
+            print(f"{tt_mass}< {mtt_max} && {tt_mass} > {mtt_min} ")
             percentage_bckg_lin =  n_after_bckg_lin/n_before_bckg_lin if n_before_bckg_lin!=0 else 0
             print(f"percentage_bckg_lin = {percentage_bckg_lin} ")

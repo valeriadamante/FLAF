@@ -233,12 +233,31 @@ def defineTriggerWeightsErrors(dfBuilder):
             f"tauTau_trigSF_tau{scale}_rel",
             f"if (HLT_ditau && Legacy_region && tauTau) {{return (SelectCorrectDM(tau1_decayMode, weight_tau1_TrgSF_ditau_DM0{scale}_rel, weight_tau1_TrgSF_ditau_DM1{scale}_rel, weight_tau1_TrgSF_ditau_3Prong{scale}_rel)*SelectCorrectDM(tau2_decayMode, weight_tau2_TrgSF_ditau_DM0{scale}_rel, weight_tau2_TrgSF_ditau_DM1{scale}_rel, weight_tau2_TrgSF_ditau_3Prong{scale}_rel)); }}return 1.f;"
         )
-            ### singleTau ###
-        dfBuilder.df = dfBuilder.df.Define(f"weight_trigSF_singleTau{scale}_rel", f"""if (HLT_singleTau && (tauTau ) && SingleTau_region && !(Legacy_region)) {{return getCorrectSingleLepWeight(tau1_pt, tau1_eta, tau1_HasMatching_singleTau, weight_tau1_TrgSF_singleTau{scale}_rel,tau2_pt, tau2_eta, tau2_HasMatching_singleTau, weight_tau2_TrgSF_singleTau{scale}_rel); }} else if (HLT_singleTau && (eTau || muTau ) && SingleTau_region && !(Legacy_region)) {{return weight_tau2_TrgSF_singleTau{scale}_rel;}} ;return 1.f;""")
+        ### singleTau ###
+        singleTau_string = ""
+
+        if 'tauTau' in global_cfg_dict['channels_to_consider']:
+            singleTau_string += f"if(HLT_singleTau && (tauTau ) && SingleTau_region && !(Legacy_region)){{return getCorrectSingleLepWeight(tau1_pt, tau1_eta, tau1_HasMatching_singleTau, weight_tau1_TrgSF_singleTau{scale}_rel,tau2_pt, tau2_eta, tau2_HasMatching_singleTau, weight_tau2_TrgSF_singleTau{scale}_rel);}}"
+        if 'eTau' in global_cfg_dict['channels_to_consider']:
+            singleTau_string+= f"if (HLT_singleTau && (eTau ) && SingleTau_region && !(Legacy_region)) {{return weight_tau2_TrgSF_singleTau{scale}_rel;}}  "
+        if 'muTau' in global_cfg_dict['channels_to_consider']:
+            singleTau_string+= "if (HLT_singleTau && (muTau ) && SingleTau_region && !(Legacy_region)) {{return weight_tau2_TrgSF_singleTau{scale}_rel;}}  "
+        singleTau_string += " return 1.f;"
+        print(singleTau_string)
+        dfBuilder.df = dfBuilder.df.Define(f"weight_trigSF_singleTau{scale}_rel", singleTau_string)
         ### MET ###
         dfBuilder.df = dfBuilder.df.Define(f"weight_trigSF_MET{scale}_rel", f"if(HLT_MET && !(SingleTau_region) && !(Legacy_region)) {{return weight_TrgSF_MET{scale}_rel;}} return 1.f;")
         #### final tau trig sf #####
-        dfBuilder.df = dfBuilder.df.Define(f"trigSF_tau{scale}_rel", f"""if (Legacy_region && eTau){{return eTau_trigSF_tau{scale}_rel;}} else if (Legacy_region && muTau){{return muTau_trigSF_tau{scale}_rel;}} else if(Legacy_region && tauTau){{return tauTau_trigSF_tau{scale}_rel;}} return 1.f;""")
+        final_tau_trig_sf_string = ""
+        if 'tauTau' in global_cfg_dict['channels_to_consider']:
+            final_tau_trig_sf_string += f"if(Legacy_region && tauTau){{return tauTau_trigSF_tau{scale}_rel;}}"
+        if 'eTau' in global_cfg_dict['channels_to_consider']:
+            final_tau_trig_sf_string+= f"if (Legacy_region && eTau){{return eTau_trigSF_tau{scale}_rel;}} "
+        if 'muTau' in global_cfg_dict['channels_to_consider']:
+            final_tau_trig_sf_string+= f" if (Legacy_region && muTau){{return muTau_trigSF_tau{scale}_rel;}} "
+        final_tau_trig_sf_string += " return 1.f;"
+        print(final_tau_trig_sf_string)
+        dfBuilder.df = dfBuilder.df.Define(f"trigSF_tau{scale}_rel", final_tau_trig_sf_string)
         # ### singleEle only - for eE ###
         # dfBuilder.df = dfBuilder.df.Define(f"weight_trigSF_singleEle{scale}_rel", f"""(HLT_singleEle && SingleEle_region && eE) {{return getCorrectSingleLepWeight(tau1_pt, tau1_eta, tau1_HasMatching_singleEle, weight_tau1_TrgSF_singleEle{scale}_rel,tau2_pt, tau2_eta, tau2_HasMatching_singleEle, weight_tau2_TrgSF_singleEle{scale}_rel);}} return 1.f;""")
         # dfBuilder.df = dfBuilder.df.Define(f"weight_trigSF_singleMu{scale}_rel", f"""if (HLT_singleMu && SingleMu_region && muMu) {{return getCorrectSingleLepWeight(tau1_pt, tau1_eta, tau1_HasMatching_singleMu, weight_tau1_TrgSF_singleMu{scale}_rel,tau2_pt, tau2_eta, tau2_HasMatching_singleMu, weight_tau2_TrgSF_singleMu{scale}_rel) ;}} return 1.f;""")
