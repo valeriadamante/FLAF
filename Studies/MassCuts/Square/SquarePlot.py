@@ -28,7 +28,7 @@ period_dict = {
 # kThermometer=105, # 6 /10
 # kViridis=112, # /10
 
-def plot_2D_histogram(histogram, xlabel, ylabel, bin_labels, filename, period, cat, channel, rectangle_coordinates):
+def plot_2D_histogram(histogram, xlabel, ylabel, bin_labels, filename, period, cat, channel, rectangle_coordinates,text_coordinates=None):
     hep.style.use("CMS")
     plt.figure(figsize=(25, 15))
     plt.xlabel(xlabel, fontsize=40)
