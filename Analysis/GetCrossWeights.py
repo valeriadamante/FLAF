@@ -236,12 +236,12 @@ def defineTriggerWeightsErrors(dfBuilder):
         ### singleTau ###
         singleTau_string = ""
 
-        if 'tauTau' in global_cfg_dict['channels_to_consider']:
-            singleTau_string += f"if(HLT_singleTau && (tauTau ) && SingleTau_region && !(Legacy_region)){{return getCorrectSingleLepWeight(tau1_pt, tau1_eta, tau1_HasMatching_singleTau, weight_tau1_TrgSF_singleTau{scale}_rel,tau2_pt, tau2_eta, tau2_HasMatching_singleTau, weight_tau2_TrgSF_singleTau{scale}_rel);}}"
-        if 'eTau' in global_cfg_dict['channels_to_consider']:
-            singleTau_string+= f"if (HLT_singleTau && (eTau ) && SingleTau_region && !(Legacy_region)) {{return weight_tau2_TrgSF_singleTau{scale}_rel;}}  "
-        if 'muTau' in global_cfg_dict['channels_to_consider']:
-            singleTau_string+= "if (HLT_singleTau && (muTau ) && SingleTau_region && !(Legacy_region)) {{return weight_tau2_TrgSF_singleTau{scale}_rel;}}  "
+        if 'tauTau' in dfBuilder.config['channels_to_consider']:
+            singleTau_string += f"""if(HLT_singleTau && (tauTau ) && SingleTau_region && !(Legacy_region)){{return getCorrectSingleLepWeight(tau1_pt, tau1_eta, tau1_HasMatching_singleTau, weight_tau1_TrgSF_singleTau{scale}_rel,tau2_pt, tau2_eta, tau2_HasMatching_singleTau, weight_tau2_TrgSF_singleTau{scale}_rel);}}"""
+        if 'eTau' in dfBuilder.config['channels_to_consider']:
+            singleTau_string+= f"""if (HLT_singleTau && (eTau ) && SingleTau_region && !(Legacy_region)) {{return weight_tau2_TrgSF_singleTau{scale}_rel;}} """
+        if 'muTau' in dfBuilder.config['channels_to_consider']:
+            singleTau_string+= f"""if (HLT_singleTau && (muTau ) && SingleTau_region && !(Legacy_region)) {{return weight_tau2_TrgSF_singleTau{scale}_rel;}}  """
         singleTau_string += " return 1.f;"
         print(singleTau_string)
         dfBuilder.df = dfBuilder.df.Define(f"weight_trigSF_singleTau{scale}_rel", singleTau_string)
@@ -249,11 +249,11 @@ def defineTriggerWeightsErrors(dfBuilder):
         dfBuilder.df = dfBuilder.df.Define(f"weight_trigSF_MET{scale}_rel", f"if(HLT_MET && !(SingleTau_region) && !(Legacy_region)) {{return weight_TrgSF_MET{scale}_rel;}} return 1.f;")
         #### final tau trig sf #####
         final_tau_trig_sf_string = ""
-        if 'tauTau' in global_cfg_dict['channels_to_consider']:
+        if 'tauTau' in dfBuilder.config['channels_to_consider']:
             final_tau_trig_sf_string += f"if(Legacy_region && tauTau){{return tauTau_trigSF_tau{scale}_rel;}}"
-        if 'eTau' in global_cfg_dict['channels_to_consider']:
+        if 'eTau' in dfBuilder.config['channels_to_consider']:
             final_tau_trig_sf_string+= f"if (Legacy_region && eTau){{return eTau_trigSF_tau{scale}_rel;}} "
-        if 'muTau' in global_cfg_dict['channels_to_consider']:
+        if 'muTau' in dfBuilder.config['channels_to_consider']:
             final_tau_trig_sf_string+= f" if (Legacy_region && muTau){{return muTau_trigSF_tau{scale}_rel;}} "
         final_tau_trig_sf_string += " return 1.f;"
         print(final_tau_trig_sf_string)

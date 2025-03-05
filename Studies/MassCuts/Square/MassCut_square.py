@@ -166,28 +166,25 @@ if __name__ == "__main__":
         dfWrapped_bckg = buildDfWrapped(df_bckg,global_cfg_dict,args.year,df_bckg_cache)
     reduce_size=True
     tt_mass = "SVfit_m"
+    y_bins = hist_cfg_dict[bb_mass]['x_rebin']['other']
+    x_bins = hist_cfg_dict[tt_mass]['x_rebin']['other']
     for cat in  args.cat.split(','):
         # print(cat)
         bb_mass = "bb_m_vis" if cat != 'boosted_cat3' else "bb_m_vis_softdrop"
         # print(bb_mass)
-        y_bins = hist_cfg_dict[bb_mass]['x_rebin']['other']
-        x_bins = hist_cfg_dict[tt_mass]['x_rebin']['other']
         # print(x_bins)
         for channel in global_cfg_dict['channels_to_consider']:
             # print(channel,cat)
             dfWrapped_sig.df = dfWrapped_sig.df.Filter(f"SVfit_valid >0 && OS_Iso && {channel} && {cat} && SVfit_m > 70")
             dfWrapped_sig = FilterForbJets(cat,dfWrapped_sig)
-
             df_sig_new = dfWrapped_sig.df
             if reduce_size :
                 df_sig_new = df_sig_new.Range(100000)
             if args.checkBckg:
                 dfWrapped_bckg.df = dfWrapped_bckg.df.Filter(f"SVfit_valid>0 && OS_Iso && {channel} && {cat} && SVfit_m > 70")
                 dfWrapped_bckg = FilterForbJets(cat,dfWrapped_bckg)
-
                 df_bckg_new = dfWrapped_bckg.df
                 if reduce_size: df_bckg_new = df_bckg_new.Range(100000)
-
             # INITIALLY
             n_in_sig = df_sig_new.Count().GetValue()
             n_in_bckg = 0

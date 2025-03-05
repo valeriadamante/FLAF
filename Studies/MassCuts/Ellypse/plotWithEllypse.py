@@ -11,10 +11,29 @@ period_dict = {
     "Run2_all": "138.8",
 }
 
-def plot_2D_histogram(histogram, title, xlabel, ylabel, bin_labels, filename, year, ellipse_parameters=None,rectangle_coordinates=None):
+def plot_2D_histogram(histogram, xlabel, ylabel, bin_labels, filename, year, cat, channel, ellipse_parameters=None,rectangle_coordinates=None, text_coordinates=None):
     hep.style.use("CMS")
     plt.figure(figsize=(25, 15))
-    plt.title(title, fontsize=40)
+    # plt.title(title, fontsize=40)
+    if text_coordinates:
+        plt.text(
+            text_coordinates[0],
+            text_coordinates[1],
+            channel,
+            fontsize=20,
+            # color="red",
+            verticalalignment="top",
+            horizontalalignment="left"
+        )
+        plt.text(
+            text_coordinates[2],
+            text_coordinates[3],
+            cat,
+            fontsize=20,
+            # color="red",
+            verticalalignment="top",
+            horizontalalignment="left"
+        )
     plt.xlabel(xlabel, fontsize=40)
     plt.ylabel(ylabel, fontsize=40)
     hep.hist2dplot(histogram, cmap='Blues', cmax=histogram.GetMaximum())
