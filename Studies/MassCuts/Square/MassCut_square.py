@@ -159,34 +159,41 @@ if __name__ == "__main__":
     df_sig = getDataFramesFromFile(signalFiles,args.res, args.mass)
     df_sig_cache = getDataFramesFromFile(signalCaches,args.res, args.mass)
     dfWrapped_sig = buildDfWrapped(df_sig,global_cfg_dict,args.year,df_sig_cache)
+
     quantile_sig = 0.68
     if args.checkBckg:
         df_bckg = getDataFramesFromFile(TTFiles)
         df_bckg_cache = getDataFramesFromFile(TTCaches)
         dfWrapped_bckg = buildDfWrapped(df_bckg,global_cfg_dict,args.year,df_bckg_cache)
-    reduce_size=True
+    reduce_size=False
+
     tt_mass = "SVfit_m"
-    y_bins = hist_cfg_dict[bb_mass]['x_rebin']['other']
+    print(args.mass)
+    print(args.res)
     x_bins = hist_cfg_dict[tt_mass]['x_rebin']['other']
     for cat in  args.cat.split(','):
         # print(cat)
         bb_mass = "bb_m_vis" if cat != 'boosted_cat3' else "bb_m_vis_softdrop"
+        y_bins = hist_cfg_dict[bb_mass]['x_rebin']['other']
         # print(bb_mass)
         # print(x_bins)
         for channel in global_cfg_dict['channels_to_consider']:
             # print(channel,cat)
-            dfWrapped_sig.df = dfWrapped_sig.df.Filter(f"SVfit_valid >0 && OS_Iso && {channel} && {cat} && SVfit_m > 70")
+
+            dfWrapped_sig.df = dfWrapped_sig.df.Filter(f"SVfit_valid >0 && OS_Iso && {channel} && {cat} &&{bb_mass} > 30 && SVfit_m > 70")
             dfWrapped_sig = FilterForbJets(cat,dfWrapped_sig)
             df_sig_new = dfWrapped_sig.df
-            if reduce_size :
-                df_sig_new = df_sig_new.Range(100000)
+            # if reduce_size : df_sig_new = df_sig_new.Range(100000)
+
             if args.checkBckg:
-                dfWrapped_bckg.df = dfWrapped_bckg.df.Filter(f"SVfit_valid>0 && OS_Iso && {channel} && {cat} && SVfit_m > 70")
+                dfWrapped_bckg.df = dfWrapped_bckg.df.Filter(f"SVfit_valid>0 && OS_Iso && {channel} && {cat} &&{bb_mass} > 30 && SVfit_m > 70")
                 dfWrapped_bckg = FilterForbJets(cat,dfWrapped_bckg)
                 df_bckg_new = dfWrapped_bckg.df
                 if reduce_size: df_bckg_new = df_bckg_new.Range(100000)
+
             # INITIALLY
             n_in_sig = df_sig_new.Count().GetValue()
+            print(f"inizialmente {n_in_sig} eventi di segnale")
             n_in_bckg = 0
             ssqrtb_in = 0
             if args.checkBckg:
@@ -195,60 +202,61 @@ if __name__ == "__main__":
                 ssqrtb_in =0 if n_in_bckg == 0 else  n_in_sig/math.sqrt(n_in_bckg)
 
             # SQUARE CUT
-            if args.calculate_square_intervals:
-                mtt_min, mtt_max, mbb_min, mbb_max = GetMassesQuantilesJoint(df_sig_new, tt_mass, bb_mass, quantile_sig)
-                print("including 68% sig")
-                print(f"{tt_mass}> {mtt_min} && {tt_mass} < {mtt_max}, {bb_mass}< {mbb_max} && {bb_mass} > {mbb_min}")
-                if args.checkBckg:
-                    min_tt_bckg1, max_tt_bckg1, min_bb_bckg1, max_bb_bckg1 = GetMassesQuantilesJoint(df_bckg_new, tt_mass, bb_mass, 0.68)
-                    print("including 68% tt")
-                    print(f"{tt_mass}< {min_tt_bckg1} && {tt_mass} > {max_tt_bckg1}, {bb_mass}< {max_bb_bckg1} && {bb_mass} > {min_bb_bckg1}")
-                    print("including 90% tt")
-                    min_tt_bckg2, max_tt_bckg2, min_bb_bckg2, max_bb_bckg2 = GetMassesQuantilesJoint(df_bckg_new, tt_mass, bb_mass, 0.9)
-                    print(f"{tt_mass}< {min_tt_bckg2} && {tt_mass} > {max_tt_bckg2}, {bb_mass}< {max_bb_bckg2} && {bb_mass} > {min_bb_bckg2}")
-
             if args.square_params:
                 masses = args.square_params.split(",")
                 mtt_min, mtt_max, mbb_min, mbb_max = masses[0],masses[1],masses[2],masses[3]
                 print("mtt_min, mtt_max, mbb_min, mbb_max")
                 print(mtt_min, mtt_max, mbb_min, mbb_max)
             else:
-                mtt_min, mtt_max, mbb_min, mbb_max = 75,155,90,150
+                mtt_min, mtt_max, mbb_min, mbb_max = 55,155,60,150
+                # mtt_min, mtt_max, mbb_min, mbb_max = 75,155,90,150
+            if args.calculate_square_intervals:
+                mtt_min, mtt_max, mbb_min, mbb_max = GetMassesQuantilesJoint(df_sig_new, tt_mass, bb_mass, quantile_sig)
+                print("including 68% sig")
+                print(f"{tt_mass}> {mtt_min} && {tt_mass} < {mtt_max}, {bb_mass}< {mbb_max} && {bb_mass} > {mbb_min}")
+                # if args.checkBckg:
+                #     min_tt_bckg1, max_tt_bckg1, min_bb_bckg1, max_bb_bckg1 = GetMassesQuantilesJoint(df_bckg_new, tt_mass, bb_mass, 0.68)
+                #     print("including 68% tt")
+                #     print(f"{tt_mass}< {min_tt_bckg1} && {tt_mass} > {max_tt_bckg1}, {bb_mass}< {max_bb_bckg1} && {bb_mass} > {min_bb_bckg1}")
+                #     print("including 90% tt")
+                #     min_tt_bckg2, max_tt_bckg2, min_bb_bckg2, max_bb_bckg2 = GetMassesQuantilesJoint(df_bckg_new, tt_mass, bb_mass, 0.9)
+                #     print(f"{tt_mass}< {min_tt_bckg2} && {tt_mass} > {max_tt_bckg2}, {bb_mass}< {max_bb_bckg2} && {bb_mass} > {min_bb_bckg2}")
 
-            print(f"{tt_mass}< {mtt_max} && {tt_mass} > {mtt_min} && {bb_mass}< {mbb_max} && {bb_mass} > {mbb_min}")
-            n_after_sig_lin = df_sig_new.Filter(f"{tt_mass}< {mtt_max} && {tt_mass} > {mtt_min}").Filter(f"{bb_mass}< {mbb_max} && {bb_mass} > {mbb_min}").Count().GetValue()
+
+            # print(f"{tt_mass}< {mtt_max} && {tt_mass} > {mtt_min} && {bb_mass}< {mbb_max} && {bb_mass} > {mbb_min}")
+            n_after_sig_lin = df_sig_new.Filter(f"{tt_mass}< {mtt_max} && {tt_mass} > {mtt_min} && {bb_mass}< {mbb_max} && {bb_mass} > {mbb_min}").Count().GetValue()
             percentage_sig_lin =  0 if n_in_sig==0 else n_after_sig_lin/n_in_sig
             n_after_bckg_lin = 0
             percentage_bckg_lin = 0
             ssqrtb_lin = 0
             print(f"percentage_sig_lin = {percentage_sig_lin} ")
             if args.checkBckg:
-                n_after_bckg_lin = df_bckg_new.Filter(f"{tt_mass}< {mtt_max} && {tt_mass} > {mtt_min}").Filter(f"{bb_mass}< {mbb_max} && {bb_mass} > {mbb_min}").Count().GetValue()
+                n_after_bckg_lin = df_bckg_new.Filter(f"{tt_mass}< {mtt_max} && {tt_mass} > {mtt_min} && {bb_mass}< {mbb_max} && {bb_mass} > {mbb_min}").Count().GetValue()
                 print(f"dopo taglio lineare {n_after_sig_lin} eventi di segnale e {n_after_bckg_lin} eventi di fondo")
                 percentage_bckg_lin =  n_after_bckg_lin/n_in_bckg if n_in_bckg!=0 else 0
                 ssqrtb_lin = 0 if n_after_bckg_lin ==0 else n_after_sig_lin/math.sqrt(n_after_bckg_lin)
                 print(f"percentage_bckg_lin = {percentage_bckg_lin} ")
                 print(f"ssqrtb = {ssqrtb_lin} ")
             # Ellyptic CUT
-            if args.calculate_ell_intervals:
-                A, B_final, C, D_final = GetEllipticCut(df_sig_new, tt_mass, bb_mass, quantile_sig)
-                # new_pars = (math.floor(v*100)/100)  # -> 2.35
-                # print(f"(({tt_mass} - {new_par_A})*({tt_mass} - {new_par_A}) / ({new_par_B}*{new_par_B}) + ({bb_mass} - {new_par_C})*({bb_mass} - {new_par_C}) / ({new_par_D}*{new_par_D})) < 1")
-
             if args.ell_params:
                 ellypse_params = args.ell_params.split(",")
                 A, B_final, C, D_final = ellypse_params[0],ellypse_params[1],ellypse_params[2],ellypse_params[3]
             else:
                 A, B_final, C, D_final = 121,26,115,36
+            if args.calculate_ell_intervals:
+                A, B_final, C, D_final = GetEllipticCut(df_sig_new, tt_mass, bb_mass, quantile_sig)
+                # new_pars = (math.floor(v*100)/100)  # -> 2.35
+                # print(f"(({tt_mass} - {new_par_A})*({tt_mass} - {new_par_A}) / ({new_par_B}*{new_par_B}) + ({bb_mass} - {new_par_C})*({bb_mass} - {new_par_C}) / ({new_par_D}*{new_par_D})) < 1")
+
 
             new_par_A = (math.ceil(A*100)/100)  # -> 2.36
             new_par_B = (math.ceil(B_final*100)/100)  # -> 2.36
             new_par_C = (math.ceil(C*100)/100)  # -> 2.36
             new_par_D = (math.ceil(D_final*100)/100)  # -> 2.36
-
+            print(new_par_A, new_par_B, new_par_C, new_par_D)
             # print(f"{tt_mass}< {mtt_max} && {tt_mass} > {mtt_min} && {bb_mass}< {mbb_max} && {bb_mass} > {mbb_min}")
             n_after_sig_ell =  df_sig_new.Filter(f"(({tt_mass} - {new_par_A})*({tt_mass} - {new_par_A}) / ({new_par_B}*{new_par_B}) + ({bb_mass} - {new_par_C})*({bb_mass} - {new_par_C}) / ({new_par_D}*{new_par_D})) < 1").Count().GetValue()
-            percentage_sig_ell =  n_after_sig_ell/n_in_sig if n_in_bckg!=0 else 0
+            percentage_sig_ell =  n_after_sig_ell/n_in_sig if n_in_sig!=0 else 0
             print(f"percentage_sig_ell = {percentage_sig_ell} ")
 
             n_after_bckg_ell = 0

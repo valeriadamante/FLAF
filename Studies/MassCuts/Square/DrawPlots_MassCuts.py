@@ -180,31 +180,31 @@ if __name__ == "__main__":
         for channel in global_cfg_dict['channels_to_consider']:
             channel_name = channel_names[channel]
             if args.compute_bckg:
-                dfWrapped_bckg.df = dfWrapped_bckg.df.Filter(f"SVfit_valid>0 && OS_Iso && {channel} && {cat} && SVfit_m > 70")
+                dfWrapped_bckg.df = dfWrapped_bckg.df.Filter(f"SVfit_valid>0 && OS_Iso && {channel} && {cat} && SVfit_m > 0")
                 dfWrapped_bckg = FilterForbJets(cat,dfWrapped_bckg)
                 df_bckg_new = dfWrapped_bckg.df
                 if reduce_size: df_bckg_new = df_bckg_new.Range(100000)
-                df_bckg_new = df_bckg_new.Filter(f"(({tt_mass} - {new_par_A})*({tt_mass} - {new_par_A}) / ({new_par_B}*{new_par_B}) + ({bb_mass} -  {new_par_C})*({bb_mass} - {new_par_C}) / ({new_par_D}*{new_par_D})) < 1")
+                # df_bckg_new = df_bckg_new.Filter(f"(({tt_mass} - {new_par_A})*({tt_mass} - {new_par_A}) / ({new_par_B}*{new_par_B}) + ({bb_mass} -  {new_par_C})*({bb_mass} - {new_par_C}) / ({new_par_D}*{new_par_D})) < 1")
                 hist_bckg=df_bckg_new.Histo2D(GetModel2D(x_bins, y_bins),bb_mass, tt_mass).GetValue()
                 outFile_prefix+=f"TT/"
                 os.makedirs(outFile_prefix,exist_ok=True)
                 finalFileName = f"{outFile_prefix}{channel}_TT"
-                Ellypse.plot_2D_histogram(hist_bckg, "$m_{bb}$", f"$m^{{SV}}_{{{channel_name}}}", None, f"{finalFileName}_square", f"Run2_{args.year}", cat.split('_')[0], f"$bb{channel_name}$", None,rectangle_coordinates, text_coordinates)
+                Ellypse.plot_2D_histogram(hist_bckg, "$m_{bb}$", f"$m^{{SV}}_{{{channel_name}}}$", None, f"{finalFileName}_square", f"Run2_{args.year}", cat.split('_')[0], f"$bb{channel_name}$", None,rectangle_coordinates, text_coordinates)
                 print(f"{finalFileName}_square.png")
-                Ellypse.plot_2D_histogram(hist_bckg, "$m_{bb}$", f"$m^{{SV}}_{{{channel_name}}}", None, f"{finalFileName}_ellypse_square", f"Run2_{args.year}", cat.split('_')[0], f"$bb{channel_name}$", ellypse_par,rectangle_coordinates, text_coordinates)
+                Ellypse.plot_2D_histogram(hist_bckg, "$m_{bb}$", f"$m^{{SV}}_{{{channel_name}}}$", None, f"{finalFileName}_ellypse_square", f"Run2_{args.year}", cat.split('_')[0], f"$bb{channel_name}$", ellypse_par,rectangle_coordinates, text_coordinates)
 
                 print(f"{finalFileName}_ellypse_square.png")
-                Ellypse.plot_2D_histogram(hist_bckg, "$m_{bb}$", f"$m^{{SV}}_{{{channel_name}}}", None, f"{finalFileName}_ellypse", f"Run2_{args.year}", cat.split('_')[0], f"$bb{channel_name}$", ellypse_par,None, text_coordinates)
+                Ellypse.plot_2D_histogram(hist_bckg, "$m_{bb}$", f"$m^{{SV}}_{{{channel_name}}}$", None, f"{finalFileName}_ellypse", f"Run2_{args.year}", cat.split('_')[0], f"$bb{channel_name}$", ellypse_par,None, text_coordinates)
 
                 print(f"{finalFileName}_ellypse.png")
 
             if args.res and args.mass:
-                dfWrapped_sig.df = dfWrapped_sig.df.Filter(f"SVfit_valid >0 && OS_Iso && {channel} && {cat} && SVfit_m > 70")
+                dfWrapped_sig.df = dfWrapped_sig.df.Filter(f"SVfit_valid >0 && OS_Iso && {channel} && {cat} && SVfit_m > 0")
                 dfWrapped_sig = FilterForbJets(cat,dfWrapped_sig)
                 df_sig_new = dfWrapped_sig.df
                 if reduce_size :
                     df_sig_new = df_sig_new.Range(100000)
-                df_sig_new =  df_sig_new.Filter(f"(({tt_mass} - {new_par_A})*({tt_mass} - {new_par_A}) / ({new_par_B}*{new_par_B}) + ({bb_mass} - {new_par_C})*({bb_mass} - {new_par_C}) / ({new_par_D}*{new_par_D})) < 1")
+                # df_sig_new =  df_sig_new.Filter(f"(({tt_mass} - {new_par_A})*({tt_mass} - {new_par_A}) / ({new_par_B}*{new_par_B}) + ({bb_mass} - {new_par_C})*({bb_mass} - {new_par_C}) / ({new_par_D}*{new_par_D})) < 1")
                 outFile_prefix = f"/afs/cern.ch/work/v/vdamante/FLAF/Studies/MassCuts/Square/MassCut2DPlots/Run2_{args.year}/{cat}/"
                 hist_sig=df_sig_new.Histo2D(GetModel2D(x_bins, y_bins),bb_mass, tt_mass).GetValue()
                 outFile_prefix+=f"{args.res}/{args.mass}/"
@@ -212,9 +212,9 @@ if __name__ == "__main__":
                 finalFileName = f"{outFile_prefix}{channel}_{args.res}_M-{args.mass}"
                 Ellypse.plot_2D_histogram(hist_sig, "$m_{bb}$", f"$m^{{SV}}_{{{channel_name}}}$", None, f"{finalFileName}_square", f"Run2_{args.year}", cat.split('_')[0], f"bb${channel_name}$", None,rectangle_coordinates, text_coordinates)
                 print(f"{finalFileName}_square.png")
-                Ellypse.plot_2D_histogram(hist_sig, "$m_{bb}$", f"$m^{{SV}}_{{{channel_name}}}", None, f"{finalFileName}_ellypse_square", f"Run2_{args.year}", cat.split('_')[0], f"bb${channel_name}$", ellypse_par,rectangle_coordinates, text_coordinates)
+                Ellypse.plot_2D_histogram(hist_sig, "$m_{bb}$", f"$m^{{SV}}_{{{channel_name}}}$", None, f"{finalFileName}_ellypse_square", f"Run2_{args.year}", cat.split('_')[0], f"bb${channel_name}$", ellypse_par,rectangle_coordinates, text_coordinates)
                 print(f"{finalFileName}_ellypse_square.png")
-                Ellypse.plot_2D_histogram(hist_sig, "$m_{bb}$", f"$m^{{SV}}_{{{channel_name}}}", None, f"{finalFileName}_ellypse", f"Run2_{args.year}", cat.split('_')[0], f"bb${channel_name}$", ellypse_par,None, text_coordinates)
+                Ellypse.plot_2D_histogram(hist_sig, "$m_{bb}$", f"$m^{{SV}}_{{{channel_name}}}$", None, f"{finalFileName}_ellypse", f"Run2_{args.year}", cat.split('_')[0], f"bb${channel_name}$", ellypse_par,None, text_coordinates)
                 print(f"{finalFileName}_ellypse.png")
 
 

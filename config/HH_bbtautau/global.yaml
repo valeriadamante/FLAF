@@ -273,14 +273,14 @@ ellypse_limits_boosted:
 
 mass_cut_limits:
   bb_m_vis:
-      - 90
-      - 150
+      - 30
+      - 130
   tautau_m_vis:
       - 60
       - 150
   SVfit_m:
-      - 75
-      - 155
+      - 70
+      - 180
 
 scales:
   - Up
