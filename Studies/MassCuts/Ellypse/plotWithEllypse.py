@@ -43,7 +43,7 @@ def plot_2D_histogram(histogram, xlabel, ylabel, bin_labels, filename, period, c
     # Eventuali bin labels
     if bin_labels:
         textstr = '\n'.join([f"{i}. {label}" for i, label in enumerate(bin_labels)])
-        plt.gcf().text(0.8, 0.5, textstr, fontsize=14)
+        plt.gcf().text(0.8, 0.5, textstr, fontsize=20)
 
     # Aggiunta dell'ellisse se specificata
     fig = plt.gcf()

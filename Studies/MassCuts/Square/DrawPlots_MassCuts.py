@@ -17,7 +17,11 @@ from Studies.MassCuts.Square.SquarePlot import *
 
 import Studies.MassCuts.Ellypse.plotWithEllypse as Ellypse
 
-
+channel_names = {
+    "eTau" : "e \\tau_h",
+    "muTau" : "\\mu \\tau_h",
+    "tauTau" : "\\tau_h \\tau_h",
+}
 def createCacheQuantities(dfWrapped_cache, cache_map_name):
     df_cache = dfWrapped_cache.df
     map_creator_cache = ROOT.analysis.CacheCreator(*dfWrapped_cache.colTypes)()
@@ -174,6 +178,7 @@ if __name__ == "__main__":
         outFile_prefix = f"/afs/cern.ch/work/v/vdamante/FLAF/Studies/MassCuts/Square/MassCut2DPlots/Run2_{args.year}/{cat}/"
         text_coordinates = [180, 270, 180, 260]
         for channel in global_cfg_dict['channels_to_consider']:
+            channel_name = channel_names[channel]
             if args.compute_bckg:
                 dfWrapped_bckg.df = dfWrapped_bckg.df.Filter(f"SVfit_valid>0 && OS_Iso && {channel} && {cat} && SVfit_m > 70")
                 dfWrapped_bckg = FilterForbJets(cat,dfWrapped_bckg)
@@ -184,11 +189,13 @@ if __name__ == "__main__":
                 outFile_prefix+=f"TT/"
                 os.makedirs(outFile_prefix,exist_ok=True)
                 finalFileName = f"{outFile_prefix}{channel}_TT"
-                plot_2D_histogram(hist_bckg, "$m_{bb}$", "$m_{\\tau\\tau}$", None, f"{finalFileName}_square", f"Run2_{args.year}", cat, channel, rectangle_coordinates, text_coordinates)
+                Ellypse.plot_2D_histogram(hist_bckg, "$m_{bb}$", f"$m^{{SV}}_{{{channel_name}}}", None, f"{finalFileName}_square", f"Run2_{args.year}", cat.split('_')[0], f"$bb{channel_name}$", None,rectangle_coordinates, text_coordinates)
                 print(f"{finalFileName}_square.png")
-                Ellypse.plot_2D_histogram(hist_bckg, f" {cat} {channel}","$m_{bb}$", "$m_{\\tau\\tau}$", None, f"{finalFileName}_ellypse_square", f"{args.year}", ellypse_par,rectangle_coordinates)
+                Ellypse.plot_2D_histogram(hist_bckg, "$m_{bb}$", f"$m^{{SV}}_{{{channel_name}}}", None, f"{finalFileName}_ellypse_square", f"Run2_{args.year}", cat.split('_')[0], f"$bb{channel_name}$", ellypse_par,rectangle_coordinates, text_coordinates)
+
                 print(f"{finalFileName}_ellypse_square.png")
-                Ellypse.plot_2D_histogram(hist_bckg, f" {cat} {channel}","$m_{bb}$", "$m_{\\tau\\tau}$", None, f"{finalFileName}_ellypse", f"{args.year}", ellypse_par,None)
+                Ellypse.plot_2D_histogram(hist_bckg, "$m_{bb}$", f"$m^{{SV}}_{{{channel_name}}}", None, f"{finalFileName}_ellypse", f"Run2_{args.year}", cat.split('_')[0], f"$bb{channel_name}$", ellypse_par,None, text_coordinates)
+
                 print(f"{finalFileName}_ellypse.png")
 
             if args.res and args.mass:
@@ -203,11 +210,11 @@ if __name__ == "__main__":
                 outFile_prefix+=f"{args.res}/{args.mass}/"
                 os.makedirs(outFile_prefix,exist_ok=True)
                 finalFileName = f"{outFile_prefix}{channel}_{args.res}_M-{args.mass}"
-                plot_2D_histogram(hist_sig, "$m_{bb}$", "$m_{\\tau\\tau}$", None, f"{finalFileName}_square", f"Run2_{args.year}", cat, channel, rectangle_coordinates, text_coordinates)
+                Ellypse.plot_2D_histogram(hist_sig, "$m_{bb}$", f"$m^{{SV}}_{{{channel_name}}}$", None, f"{finalFileName}_square", f"Run2_{args.year}", cat.split('_')[0], f"bb${channel_name}$", None,rectangle_coordinates, text_coordinates)
                 print(f"{finalFileName}_square.png")
-                Ellypse.plot_2D_histogram(hist_sig, "$m_{bb}$", "$m_{\\tau\\tau}$", None, f"{finalFileName}_ellypse_square", f"Run2_{args.year}", cat, channel, ellypse_par,rectangle_coordinates, text_coordinates)
+                Ellypse.plot_2D_histogram(hist_sig, "$m_{bb}$", f"$m^{{SV}}_{{{channel_name}}}", None, f"{finalFileName}_ellypse_square", f"Run2_{args.year}", cat.split('_')[0], f"bb${channel_name}$", ellypse_par,rectangle_coordinates, text_coordinates)
                 print(f"{finalFileName}_ellypse_square.png")
-                Ellypse.plot_2D_histogram(hist_sig, "$m_{bb}$", "$m_{\\tau\\tau}$", None, f"{finalFileName}_ellypse", f"Run2_{args.year}", cat, channel, ellypse_par,None, text_coordinates)
+                Ellypse.plot_2D_histogram(hist_sig, "$m_{bb}$", f"$m^{{SV}}_{{{channel_name}}}", None, f"{finalFileName}_ellypse", f"Run2_{args.year}", cat.split('_')[0], f"bb${channel_name}$", ellypse_par,None, text_coordinates)
                 print(f"{finalFileName}_ellypse.png")
 
 
