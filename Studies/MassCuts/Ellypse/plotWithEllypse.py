@@ -11,7 +11,7 @@ period_dict = {
     "Run2_all": "138.8",
 }
 
-def plot_2D_histogram(histogram, xlabel, ylabel, bin_labels, filename, year, cat, channel, ellipse_parameters=None,rectangle_coordinates=None, text_coordinates=None):
+def plot_2D_histogram(histogram, xlabel, ylabel, bin_labels, filename, period, cat, channel, ellipse_parameters=None,rectangle_coordinates=None, text_coordinates=None):
     hep.style.use("CMS")
     plt.figure(figsize=(25, 15))
     # plt.title(title, fontsize=40)
@@ -20,25 +20,25 @@ def plot_2D_histogram(histogram, xlabel, ylabel, bin_labels, filename, year, cat
             text_coordinates[0],
             text_coordinates[1],
             channel,
-            fontsize=20,
+            fontsize=30,
             # color="red",
             verticalalignment="top",
-            horizontalalignment="left"
+            horizontalalignment="center"
         )
         plt.text(
             text_coordinates[2],
             text_coordinates[3],
             cat,
-            fontsize=20,
+            fontsize=30,
             # color="red",
             verticalalignment="top",
-            horizontalalignment="left"
+            horizontalalignment="center"
         )
     plt.xlabel(xlabel, fontsize=40)
     plt.ylabel(ylabel, fontsize=40)
     hep.hist2dplot(histogram, cmap='Blues', cmax=histogram.GetMaximum())
-    period = f"Run2_{year}"
-    hep.cms.label("Preliminary", lumi=period_dict[period], year=year, fontsize=40)
+    # period = f"Run2_{year}"
+    hep.cms.label("Preliminary", lumi=period_dict[period], year=period.split('_')[1], fontsize=40)
 
     # Eventuali bin labels
     if bin_labels:

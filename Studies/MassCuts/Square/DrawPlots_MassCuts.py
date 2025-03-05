@@ -172,7 +172,7 @@ if __name__ == "__main__":
         bb_mass = "bb_m_vis" if cat != 'boosted_cat3' else "bb_m_vis_softdrop"
         y_bins = hist_cfg_dict[bb_mass]['x_rebin']['other']
         outFile_prefix = f"/afs/cern.ch/work/v/vdamante/FLAF/Studies/MassCuts/Square/MassCut2DPlots/Run2_{args.year}/{cat}/"
-        text_coordinates = [180, 270, 180, 250]
+        text_coordinates = [180, 270, 180, 260]
         for channel in global_cfg_dict['channels_to_consider']:
             if args.compute_bckg:
                 dfWrapped_bckg.df = dfWrapped_bckg.df.Filter(f"SVfit_valid>0 && OS_Iso && {channel} && {cat} && SVfit_m > 70")
