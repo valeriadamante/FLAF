@@ -129,14 +129,12 @@ def GetShapeDataFrameDict(all_dataframes, global_cfg_dict, key, key_central, fil
                 dfWrapped_cache_Valid = analysis.DataFrameBuilderForHistograms(ROOT.RDataFrame(treeName_Valid,inFileCache), global_cfg_dict, period=period,  deepTauVersion=deepTauVersion, bTagWPString = "Medium",pNetWPstring="Loose", region=region,isData=isData, isCentral=False, wantTriggerSFErrors=False,whichType=datasetType)
                 AddCacheColumnsInDf(dfWrapped_Valid, dfWrapped_cache_Valid,f"cache_map_{uncName}{scale}_Valid")
             dfWrapped_Valid.CreateFromDelta(colNames, colTypes)
-            print(treeName_Valid)
             dfWrapped_Valid = analysis.PrepareDfForHistograms(dfWrapped_Valid)
-            print(treeName_Valid)
             dfWrapped_Valid.AddMissingColumns(colNames, colTypes)
-            print(treeName_Valid)
             all_dataframes[key].append(dfWrapped_Valid.df)
-            print(treeName_Valid)
             print(dfWrapped_Valid.df.Count().GetValue())
+            print(f"{treeName_Valid} cache")
+            print(dfWrapped_cache_Valid.df.Count().GetValue())
         treeName_nonValid = f"{treeName}_nonValid"
         if treeName_nonValid in file_keys:
             print(treeName_nonValid)
@@ -147,6 +145,9 @@ def GetShapeDataFrameDict(all_dataframes, global_cfg_dict, key, key_central, fil
             dfWrapped_nonValid.AddMissingColumns(colNames, colTypes)
             dfWrapped_nonValid = analysis.PrepareDfForHistograms(dfWrapped_nonValid)
             all_dataframes[key].append(dfWrapped_nonValid.df)
+            print(dfWrapped_nonValid.df.Count().GetValue())
+            print(f"{treeName_nonValid} cache")
+            print(dfWrapped_cache_nonValid.df.Count().GetValue())
         if not all_dataframes[key]:
            all_dataframes.pop(key)
 

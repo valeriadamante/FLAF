@@ -156,6 +156,8 @@ if __name__ == "__main__":
     parser.add_argument('--uncSource', required=False, type=str,default='Central')
     parser.add_argument('--region', required=False, type=str,default='SR')
     parser.add_argument('--channels', required=False, type=str,default='eTau,muTau,tauTau')
+    parser.add_argument('--qcdRegion', required=False, type=str,default='')
+    parser.add_argument('--categories', required=False, type=str,default='res2b_cat3_masswindow,res1b_cat3_masswindow')
     parser.add_argument('--apply-btag-shape-weights', required=False, type=str, default=False)
     parser.add_argument('--ana_path', required=True, type=str)
     parser.add_argument('--period', required=True, type=str)
@@ -186,6 +188,10 @@ if __name__ == "__main__":
     categories = list(global_cfg_dict['categories'])
     boosted_categories = list(global_cfg_dict['boosted_categories'])
     QCDregions = list(global_cfg_dict['QCDRegions'])
+    if args.qcdRegion:
+        QCDRegions = args.qcdRegion.split(',')
+    if args.categories:
+        categories = args.categories.split(',')
     global_cfg_dict['channelSelection']=args.channels.split(',')
 
     channels = global_cfg_dict['channelSelection']

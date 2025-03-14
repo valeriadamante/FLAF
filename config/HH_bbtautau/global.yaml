@@ -72,9 +72,9 @@ categories:
   # - res2b_inclusive
   # - boosted
   # - res0b_cat2
-  # - res1b_cat2
+  - res1b_cat2
   # - res2b_cat2
-  # - res2b_cat3
+  - res2b_cat3
   # - res1b_cat3
   # - res0b_cat3
   - inclusive_masswindow
@@ -88,7 +88,7 @@ categories:
   # - res2b_cat2_masswindow
   - res2b_cat3_masswindow
   - res1b_cat3_masswindow
-  - res0b_cat3_masswindow
+  # - res0b_cat3_masswindow
 
 
 storeExtraJets: False
@@ -273,14 +273,14 @@ ellypse_limits_boosted:
 
 mass_cut_limits:
   bb_m_vis:
-      - 30
-      - 130
+      - 70
+      - 150
   tautau_m_vis:
-      - 60
+      - 70
       - 150
   SVfit_m:
-      - 70
-      - 180
+      - 80
+      - 170
 
 scales:
   - Up

@@ -20,12 +20,24 @@ hep.style.use("CMS")
     #"font.sans-serif": "Helvetica",
 #})
 
+def TH1F2np(histo, overflow=False):
+    content = histo.GetArray()
+    content.SetSize(histo.GetNbinsX() + 2)
+    if overflow:
+        content = np.array(content)[1:]
+    else:
+        content = np.array(content)[1:-1]
+    binning = np.array(histo.GetXaxis().GetXbins())
+    if overflow:
+        binning = np.append(binning, [np.inf])
+    return content, binning
+
 period_dict = {
     "Run2_2018" : "59.83",
     "Run2_2017" : "41.48",
     "Run2_2016" : "16.8",
     "Run2_2016_HIPM" : "19.5",
-    "all": "138.8 fb^{-1} (13 TeV)",
+    "Run2_all": "138.8",
 
 }
 def plot_2D_histogram(histogram, title, xlabel, ylabel, bin_labels, filename, period, rectangle_coordinates):
@@ -66,7 +78,7 @@ def plot_1D_histogram(histograms, labels, bins,title, bin_labels, filename, peri
     plt.xlabel('$M_{HH}$(GeV)', fontsize=25)
     alpha=0.8
     linewidth=2
-
+    content, binning
     colors = ["cornflowerblue", "salmon"]
     for histogram,label,color in zip(histograms,labels,colors):
         bins_x = []
@@ -86,10 +98,10 @@ def plot_1D_histogram(histograms, labels, bins,title, bin_labels, filename, peri
             bins=np.array(bins),
             histtype="fill",
             color=color,
-            alpha=alpha,
-            edgecolor=color,
+            # alpha=alpha,
+            # edgecolor=color,
             label=label,
-            linewidth=linewidth,
+            # linewidth=linewidth,
             ax=ax,
         )
         alpha-=0.2
@@ -101,5 +113,52 @@ def plot_1D_histogram(histograms, labels, bins,title, bin_labels, filename, peri
     ax.legend(fontsize=25)
     plt.show()
     plt.gca().set_aspect('auto')
+    plt.savefig(f"{filename}.pdf", format="pdf", bbox_inches="tight")
+    plt.savefig(f"{filename}.png", format="png", bbox_inches="tight")
+
+
+def plot_1D_histogram_SV(histograms, labels,title, filename, period):
+    fig, ax = plt.subplots(figsize=(16,10))
+    #plt.xlabel(xlabel, fontsize=40)
+    plt.ylabel('Events', fontsize=25)
+    plt.xlabel('$m_{\\tau\\tau}$(GeV)', fontsize=25)
+    colors = ["blue","red"]
+    # colors = ["cornflowerblue", "salmon"]
+    for histogram,label,color in zip(histograms,labels,colors):
+        # histogram.Scale(1/histogram.Integral()) #0,histogram.GetNbinsX()+1
+        bins_y = []
+        bins_x = []
+        # print(histogram.Sumw2())
+        sumw2= histogram.Sumw2()
+        for binnum in range(1,histogram.GetNbinsX()+1):
+            # bins_x.append(histogram.GetBinLowEdge(binnum))
+            bins_y.append(histogram.GetBinContent(binnum))
+            # print(binnum, histogram.GetBinCenter(binnum), histogram.GetBinContent(binnum))
+            # print(len(bins_x), len(bins_y))
+        # print(bins_x)
+        # print(bins_y)
+        print(len(bins_x), len(bins_y))
+        # bins_x.append(histogram.GetBinLowEdge(histogram.GetNbinsX() + 1))  # Aggiungi l'ultimo bordo superiore
+        bins_x = [histogram.GetBinLowEdge(b) for b in range(1, histogram.GetNbinsX() + 2)]
+
+
+        hep.histplot(
+            np.array(bins_y),
+            bins=np.array(bins_x),
+            yerr=True,
+            xerr=True,
+            # w2=sumw2,
+            density=True,
+            histtype="errorbar",
+            color=color,
+            label=label,
+            ax=ax,
+            markersize = 10,
+        )
+    hep.cms.label("Preliminary", lumi=period_dict[period], year=period.split('_')[1], fontsize=25)
+    ax.legend(fontsize=25)
+    plt.show()
+    plt.gca().set_aspect('auto')
+    print(filename)
     plt.savefig(f"{filename}.pdf", format="pdf", bbox_inches="tight")
     plt.savefig(f"{filename}.png", format="png", bbox_inches="tight")

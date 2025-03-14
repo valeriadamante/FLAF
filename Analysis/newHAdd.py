@@ -16,11 +16,12 @@ def AddMissingHistograms(fileInitial, all_histnames):
     missing_hists = {}
     inFile = ROOT.TFile.Open(fileInitial, "UPDATE")
     channels =[str(key.GetName()) for key in inFile.GetListOfKeys()]
+    # print(channels)
     for channel in channels:
         missing_hists[channel] = {}
         dir_0 = inFile.Get(channel)
-        # dir_1 = dir_0.Get("OS_Iso")
         keys_categories = [str(key.GetName()) for key in dir_0.GetListOfKeys()]
+        # print(keys_categories)
         for cat in keys_categories:
             missing_hists[channel][cat] = {}
             dir_2= dir_0.Get(cat)
@@ -34,10 +35,18 @@ def AddMissingHistograms(fileInitial, all_histnames):
     # print(missing_hists)
     for channel in missing_hists.keys():
         dir_0 = inFile.Get(channel)
+        # dir_1 = dir_0.Get("OS_Iso")
+        keys_categories = [str(key.GetName()) for key in dir_0.GetListOfKeys()]
+        # print(keys_categories)
         for cat in missing_hists[channel].keys():
             dir_2= dir_0.Get(cat)
             for proc in missing_hists[channel][cat].keys():
+                # print(proc)
                 histToClone = dir_2.Get(proc)
+                # print(histToClone.GetEntries())
+                # TH1F histNuevo = (TH1F)hist2->Clone(“histNuevo”);
+                histToClone.SetDirectory(0)
+                # histToClone.SetDirectory(0)
                 for histstoadd in missing_hists[channel][cat][proc]:
                     histCloned = histToClone.Clone(histstoadd)
                     key_dir = channel,cat
@@ -52,7 +61,6 @@ def AddMissingHistograms(fileInitial, all_histnames):
 
 unc_names = [
     "CMS_btag_HF{scale}", "CMS_btag_LF{scale}", "CMS_btag_cferr1{scale}", "CMS_btag_cferr2{scale}", "CMS_eff_t_id_syst_alleras{scale}", "CMS_eff_t_id_syst_highpT_bin1{scale}", "CMS_eff_t_id_syst_highpT_bin2{scale}", "CMS_eff_t_id_syst_highpT_extrap{scale}", "CMS_scale_j_Abs{scale}", "CMS_scale_j_BBEC1{scale}", "CMS_scale_j_EC2{scale}", "CMS_scale_j_FlavQCD{scale}", "CMS_scale_j_HF{scale}", "CMS_scale_j_RelBal{scale}", "CMS_QCD_norm_{year}{scale}", "CMS_btag_hfstats1_{year}{scale}", "CMS_btag_hfstats2_{year}{scale}", "CMS_btag_lfstats1_{year}{scale}", "CMS_btag_lfstats2_{year}{scale}", "CMS_eff_j_PUJET_id_{year}{scale}", "CMS_eff_m_id_iso_{year}{scale}", "CMS_eff_m_id_{year}{scale}", "CMS_eff_e_{year}{scale}", "CMS_eff_t_id_stat1_DM0_{year}{scale}", "CMS_eff_t_id_stat1_DM10_{year}{scale}", "CMS_eff_t_id_stat1_DM11_{year}{scale}", "CMS_eff_t_id_stat1_DM1_{year}{scale}", "CMS_eff_t_id_stat2_DM0_{year}{scale}", "CMS_eff_t_id_stat2_DM10_{year}{scale}", "CMS_eff_t_id_stat2_DM11_{year}{scale}", "CMS_eff_t_id_stat2_DM1_{year}{scale}", "CMS_eff_t_id_syst_{year}{scale}", "CMS_eff_t_id_syst_{year}_DM0{scale}", "CMS_eff_t_id_syst_{year}_DM10{scale}", "CMS_eff_t_id_syst_{year}_DM11{scale}", "CMS_eff_t_id_syst_{year}_DM1{scale}", "CMS_eff_t_id_etauFR_barrel_{year}{scale}", "CMS_eff_t_id_etauFR_endcaps_{year}{scale}", "CMS_eff_t_id_mutauFR_eta0p4to0p8_{year}{scale}", "CMS_eff_t_id_mutauFR_eta0p8to1p2_{year}{scale}", "CMS_eff_t_id_mutauFR_eta1p2to1p7_{year}{scale}", "CMS_eff_t_id_mutauFR_etaGt1p7_{year}{scale}", "CMS_eff_t_id_mutauFR_etaLt0p4_{year}{scale}", "CMS_eff_t_id_stat_highpT_bin1_{year}{scale}", "CMS_eff_t_id_stat_highpT_bin2_{year}{scale}", "CMS_eff_m_id_reco_{year}{scale}", "CMS_eff_m_id_highpt_{year}{scale}", "CMS_eff_m_id_reco_highpt_{year}{scale}", "CMS_l1_prefiring_{year}{scale}", "CMS_pu_lumi_MC_{year}{scale}", "CMS_scale_t_DM0_{year}{scale}", "CMS_scale_t_DM1_{year}{scale}", "CMS_scale_t_3prong_{year}{scale}", "CMS_scale_t_eFake_DM0_{year}{scale}", "CMS_scale_t_eFake_DM1_{year}{scale}", "CMS_scale_t_muFake_{year}{scale}", "CMS_res_j_{year}{scale}", "CMS_scale_j_Abs_{year}{scale}", "CMS_scale_j_BBEC1_{year}{scale}", "CMS_scale_j_EC2_{year}{scale}", "CMS_scale_j_HF_{year}{scale}", "CMS_scale_j_RelSample_{year}{scale}", "CMS_norm_qcd_{year}{scale}","CMS_scale_qcd_{year}{scale}", "CMS_pnet_{year}{scale}", "CMS_bbtt_trig_MET_{year}{scale}", "CMS_bbtt_trig_singleTau_{year}{scale}", "CMS_bbtt_trig_ele_{year}{scale}", "CMS_bbtt_trig_SL_ele_{year}{scale}", "CMS_bbtt_trig_cross_ele_{year}{scale}", "CMS_bbtt_trig_mu_{year}{scale}", "CMS_bbtt_trig_SL_mu_{year}{scale}", "CMS_bbtt_trig_cross_mu_{year}{scale}", "CMS_bbtt_trig_tau_{year}{scale}"]
-
 
 
 histograms_initials = {
@@ -93,9 +101,11 @@ if __name__ == "__main__":
         all_files.append(histograms_initials[year])
         AddMissingHistograms(histograms_initials_boosted[year], all_histnames)
         all_files.append(histograms_initials_boosted[year])
+        print(year)
 
 
     hadd_str += ' '.join(f for f in all_files)
+    print(hadd_str)
     if len(all_files) > 1:
         ps_call([hadd_str], True)
     else:

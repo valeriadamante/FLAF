@@ -38,10 +38,10 @@ signals=["GluGluToRadionToHHTo2B2Tau_M-250","GluGluToRadionToHHTo2B2Tau_M-260","
 years = ["2016", "2016_HIPM", "2016", "2018"]
 histograms_final = []
 histograms_initials = {
-    "2016":"/eos/user/v/vdamante/HH_bbtautau_resonant_Run2/histograms/New_MassCut_2p1/SC/SR/Run2_2016/merged/kinFit_m/kinFit_m.root",
-    "2016_HIPM":"/eos/user/v/vdamante/HH_bbtautau_resonant_Run2/histograms/New_MassCut_2p1/SC/SR/Run2_2016_HIPM/merged/kinFit_m/kinFit_m.root",
-    "2017":"/eos/user/v/vdamante/HH_bbtautau_resonant_Run2/histograms/New_MassCut_2p1/SC/SR/Run2_2017/merged/kinFit_m/kinFit_m.root",
-    "2018":"/eos/user/v/vdamante/HH_bbtautau_resonant_Run2/histograms/New_MassCut_2p1/SC/SR/Run2_2018/merged/kinFit_m/kinFit_m.root"
+    "2016":"/eos/user/v/vdamante/HH_bbtautau_resonant_Run2/histograms/New_MassCut_2p5/SC/SR/Run2_2016/merged/kinFit_m/kinFit_m.root",
+    "2016_HIPM":"/eos/user/v/vdamante/HH_bbtautau_resonant_Run2/histograms/New_MassCut_2p5/SC/SR/Run2_2016_HIPM/merged/kinFit_m/kinFit_m.root",
+    "2017":"/eos/user/v/vdamante/HH_bbtautau_resonant_Run2/histograms/New_MassCut_2p5/SC/SR/Run2_2017/merged/kinFit_m/kinFit_m.root",
+    "2018":"/eos/user/v/vdamante/HH_bbtautau_resonant_Run2/histograms/New_MassCut_2p5/SC/SR/Run2_2018/merged/kinFit_m/kinFit_m.root"
 }
 
 
@@ -84,8 +84,8 @@ if __name__ == "__main__":
     outdir = f"output/plotuncs/{args.year}/{args.channel}/{args.cat}"
     os.makedirs(outdir, exist_ok = True)
     # histo_initial = histograms_initials[args.year]
-    inFile = ROOT.TFile.Open(f"/eos/user/v/vdamante/HH_bbtautau_resonant_Run2/histograms/New_MassCut_2p1/SC/SR/Run2_{args.year}/merged/kinFit_m/kinFit_m.root", "READ")
-    # inFile = ROOT.TFile.Open(f"/eos/user/v/vdamante/HH_bbtautau_resonant_Run2/histograms/New_MassCut_2p1/SC/SR/Run2_{args.year}/merged/kinFit_m/kinFit_m.root", "READ")
+    inFile = ROOT.TFile.Open(f"/eos/user/v/vdamante/HH_bbtautau_resonant_Run2/histograms/New_MassCut_2p5/SC/SR/Run2_{args.year}/merged/kinFit_m/kinFit_m.root", "READ")
+    # inFile = ROOT.TFile.Open(f"/eos/user/v/vdamante/HH_bbtautau_resonant_Run2/histograms/New_MassCut_2p5/SC/SR/Run2_{args.year}/merged/kinFit_m/kinFit_m.root", "READ")
     dir_0 = inFile.Get(args.channel)
     keys_regions = [str(key.GetName()) for key in dir_0.GetListOfKeys()]
 
@@ -239,7 +239,7 @@ if __name__ == "__main__":
 
 
 
-        outDir= f"output/plotuncs/v2p1/{args.year}/{args.channel}/{args.cat}"
+        outDir= f"output/plotuncs/v2p5/{args.year}/{args.channel}/{args.cat}"
         # outDir= f"output/plotuncs/{args.year}/{args.channel}/{args.cat}/"
         os.makedirs(outDir, exist_ok=True)
 

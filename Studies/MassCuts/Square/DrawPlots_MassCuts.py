@@ -153,7 +153,7 @@ if __name__ == "__main__":
         print("mtt_min, mtt_max, mbb_min, mbb_max")
         print(mtt_min, mtt_max, mbb_min, mbb_max)
     else:
-        mtt_min, mtt_max, mbb_min, mbb_max = 75,155,90,150
+        mtt_min, mtt_max, mbb_min, mbb_max = 80,170,70,150 #80,190,70,150
 
     if args.ell_params:
         ellypse_params = args.ell_params.split(",")
@@ -191,12 +191,10 @@ if __name__ == "__main__":
                 finalFileName = f"{outFile_prefix}{channel}_TT"
                 Ellypse.plot_2D_histogram(hist_bckg, "$m_{bb}$", f"$m^{{SV}}_{{{channel_name}}}$", None, f"{finalFileName}_square", f"Run2_{args.year}", cat.split('_')[0], f"$bb{channel_name}$", None,rectangle_coordinates, text_coordinates)
                 print(f"{finalFileName}_square.png")
-                Ellypse.plot_2D_histogram(hist_bckg, "$m_{bb}$", f"$m^{{SV}}_{{{channel_name}}}$", None, f"{finalFileName}_ellypse_square", f"Run2_{args.year}", cat.split('_')[0], f"$bb{channel_name}$", ellypse_par,rectangle_coordinates, text_coordinates)
-
-                print(f"{finalFileName}_ellypse_square.png")
-                Ellypse.plot_2D_histogram(hist_bckg, "$m_{bb}$", f"$m^{{SV}}_{{{channel_name}}}$", None, f"{finalFileName}_ellypse", f"Run2_{args.year}", cat.split('_')[0], f"$bb{channel_name}$", ellypse_par,None, text_coordinates)
-
-                print(f"{finalFileName}_ellypse.png")
+                # Ellypse.plot_2D_histogram(hist_bckg, "$m_{bb}$", f"$m^{{SV}}_{{{channel_name}}}$", None, f"{finalFileName}_ellypse_square", f"Run2_{args.year}", cat.split('_')[0], f"$bb{channel_name}$", ellypse_par,rectangle_coordinates, text_coordinates)
+                # print(f"{finalFileName}_ellypse_square.png")
+                # Ellypse.plot_2D_histogram(hist_bckg, "$m_{bb}$", f"$m^{{SV}}_{{{channel_name}}}$", None, f"{finalFileName}_ellypse", f"Run2_{args.year}", cat.split('_')[0], f"$bb{channel_name}$", ellypse_par,None, text_coordinates)
+                # print(f"{finalFileName}_ellypse.png")
 
             if args.res and args.mass:
                 dfWrapped_sig.df = dfWrapped_sig.df.Filter(f"SVfit_valid >0 && OS_Iso && {channel} && {cat} && SVfit_m > 0")
@@ -212,10 +210,10 @@ if __name__ == "__main__":
                 finalFileName = f"{outFile_prefix}{channel}_{args.res}_M-{args.mass}"
                 Ellypse.plot_2D_histogram(hist_sig, "$m_{bb}$", f"$m^{{SV}}_{{{channel_name}}}$", None, f"{finalFileName}_square", f"Run2_{args.year}", cat.split('_')[0], f"bb${channel_name}$", None,rectangle_coordinates, text_coordinates)
                 print(f"{finalFileName}_square.png")
-                Ellypse.plot_2D_histogram(hist_sig, "$m_{bb}$", f"$m^{{SV}}_{{{channel_name}}}$", None, f"{finalFileName}_ellypse_square", f"Run2_{args.year}", cat.split('_')[0], f"bb${channel_name}$", ellypse_par,rectangle_coordinates, text_coordinates)
-                print(f"{finalFileName}_ellypse_square.png")
-                Ellypse.plot_2D_histogram(hist_sig, "$m_{bb}$", f"$m^{{SV}}_{{{channel_name}}}$", None, f"{finalFileName}_ellypse", f"Run2_{args.year}", cat.split('_')[0], f"bb${channel_name}$", ellypse_par,None, text_coordinates)
-                print(f"{finalFileName}_ellypse.png")
+                # Ellypse.plot_2D_histogram(hist_sig, "$m_{bb}$", f"$m^{{SV}}_{{{channel_name}}}$", None, f"{finalFileName}_ellypse_square", f"Run2_{args.year}", cat.split('_')[0], f"bb${channel_name}$", ellypse_par,rectangle_coordinates, text_coordinates)
+                # print(f"{finalFileName}_ellypse_square.png")
+                # Ellypse.plot_2D_histogram(hist_sig, "$m_{bb}$", f"$m^{{SV}}_{{{channel_name}}}$", None, f"{finalFileName}_ellypse", f"Run2_{args.year}", cat.split('_')[0], f"bb${channel_name}$", ellypse_par,None, text_coordinates)
+                # print(f"{finalFileName}_ellypse.png")
 
 
 

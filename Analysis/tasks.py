@@ -87,7 +87,7 @@ class HistProducerFileTask(Task, HTCondorWorkflow, law.LocalWorkflow):
         if len(branch_set) > 0:
             reqs['anaTuple'] = AnaTupleTask.req(self, branches=tuple(branch_set),customisations=self.customisations)
         if len(branch_set_cache) > 0:
-            reqs['anaCacheTuple'] = AnaCacheTupleUncTask.req(self, branches=tuple(branch_set_cache),customisations=self.customisations)
+            reqs['anaCacheTuple'] = AnaCacheTupleTask.req(self, branches=tuple(branch_set_cache),customisations=self.customisations)
         if need_data:
             reqs['dataMergeTuple'] = DataMergeTask.req(self, branches=(),customisations=self.customisations)
         if need_data_cache:
@@ -104,7 +104,7 @@ class HistProducerFileTask(Task, HTCondorWorkflow, law.LocalWorkflow):
         else:
             deps.append(AnaTupleTask.req(self, max_runtime=AnaTupleTask.max_runtime._default, branch=prod_br, branches=(prod_br,),customisations=self.customisations))
             if need_cache:
-                deps.append(AnaCacheTupleUncTask.req(self, max_runtime=AnaCacheTupleUncTask.max_runtime._default, branch=prod_br, branches=(prod_br,),customisations=self.customisations))
+                deps.append(AnaCacheTupleTask.req(self, max_runtime=AnaCacheTupleTask.max_runtime._default, branch=prod_br, branches=(prod_br,),customisations=self.customisations))
         return deps
 
     def create_branch_map(self):
@@ -149,7 +149,7 @@ class HistProducerFileTask(Task, HTCondorWorkflow, law.LocalWorkflow):
         sample_type = self.samples[sample_name]['sampleType'] if sample_name != 'data' else 'data'
         HistProducerFile = os.path.join(self.ana_path(), 'Analysis', 'HistProducerFile.py')
         print(f'output file is {self.output().path}')
-        compute_unc_histograms = customisation_dict['compute_unc_histograms']=='True' if 'compute_unc_histograms' in customisation_dict.keys() else self.global_params.get('compute_unc_histograms', False)
+        compute_unc_histograms = customisation_dict['compute_unc_histograms']=='true' if 'compute_unc_histograms' in customisation_dict.keys() else self.global_params.get('compute_unc_histograms', False)
         with input_file.localize("r") as local_input, self.output().localize("w") as local_output:
             HistProducerFile_cmd = [ 'python3', HistProducerFile,
                                     '--inFile', local_input.path, '--outFileName',local_output.path,
@@ -296,13 +296,21 @@ class MergeTask(Task, HTCondorWorkflow, law.LocalWorkflow):
         # var_only_boosted
         if var in self.global_params["var_only_boosted"]:
             uncs_to_exclude += self.global_params["unc_to_not_consider_boosted"]
-
-        compute_unc_histograms = customisation_dict['compute_unc_histograms']=='True' if 'compute_unc_histograms' in customisation_dict.keys() else self.global_params.get('compute_unc_histograms', False)
+        custdict = customisation_dict['compute_unc_histograms']
+        print(f"cust dict true unc ? {custdict}")
+        compute_unc_histograms = customisation_dict['compute_unc_histograms']=='true' if 'compute_unc_histograms' in customisation_dict.keys() else self.global_params.get('compute_unc_histograms', False)
+        qcdRegion = 'OS_Iso'
+        if not compute_unc_histograms:
+            qcdRegion = 'OS_Iso,SS_Iso,OS_AntiIso,SS_AntiIso'
+        categories = 'res2b_cat3_masswindow,res1b_cat3_masswindow'
+        if not compute_unc_histograms:
+            categories = 'res2b_cat3_masswindow,res1b_cat3_masswindow,inclusive_masswindow,inclusive,baseline_masswindow,baseline'
+        print(f"compute unc histograms? {compute_unc_histograms}")
         if compute_unc_histograms:
             for uncName in unc_cfg_dict['shape'] + list(unc_cfg_dict['norm'].keys()):
                 if uncName in uncs_to_exclude: continue
                 uncNames.append(uncName)
-        print(uncNames)
+        print(f"uncnames are {uncNames}")
         MergerProducer = os.path.join(self.ana_path(), 'Analysis', 'HistMerger.py')
         HaddMergedHistsProducer = os.path.join(self.ana_path(), 'Analysis', 'hadd_merged_hists.py')
         RenameHistsProducer = os.path.join(self.ana_path(), 'Analysis', 'renameHists.py')
@@ -326,10 +334,11 @@ class MergeTask(Task, HTCondorWorkflow, law.LocalWorkflow):
                 local_inputs.append(stack.enter_context(inp.localize('r')).path)
                 all_datasets.append(smpl)
             dataset_names = ','.join(smpl for smpl in all_datasets)
-
+            print("qcdRegion,categories,uncNames")
+            print(qcdRegion,categories,uncNames)
             if len(uncNames)==1:
                 with self.output().localize("w") as outFile:
-                    MergerProducer_cmd = ['python3', MergerProducer,'--outFile', outFile.path, '--var', var, '--uncSource', uncNames[0], '--datasetFile', dataset_names, '--channels',channels, '--ana_path', self.ana_path(), '--period', self.period]#, '--remove-files', 'True']
+                    MergerProducer_cmd = ['python3', MergerProducer,'--outFile', outFile.path, '--var', var, '--uncSource', uncNames[0], '--datasetFile', dataset_names, '--channels',channels, '--ana_path', self.ana_path(), '--period', self.period,'--categories', categories, '--qcdRegion',qcdRegion]#, '--remove-files', 'True']
                     if 'apply_btag_shape_weights' in customisation_dict.keys():
                         MergerProducer_cmd.append('--apply-btag-shape-weights', customisation_dict['apply_btag_shape_weights'])
                     MergerProducer_cmd.extend(local_inputs)
@@ -341,7 +350,7 @@ class MergeTask(Task, HTCondorWorkflow, law.LocalWorkflow):
                     tmp_outfile_merge = os.path.join(outdir_histograms,final_histname)
                     tmp_outfile_merge_remote = self.remote_target(tmp_outfile_merge, fs=self.fs_histograms)
                     with tmp_outfile_merge_remote.localize("w") as tmp_outfile_merge_unc:
-                        MergerProducer_cmd = ['python3', MergerProducer,'--outFile', tmp_outfile_merge_unc.path, '--var', var, '--uncSource', uncName, '--datasetFile', dataset_names, '--channels',channels, '--ana_path', self.ana_path(), '--period', self.period]#, '--remove-files', 'True']
+                        MergerProducer_cmd = ['python3', MergerProducer,'--outFile', tmp_outfile_merge_unc.path, '--var', var, '--uncSource', uncName, '--datasetFile', dataset_names, '--channels',channels, '--ana_path', self.ana_path(), '--period', self.period, '--categories', categories,'--qcdRegion',qcdRegion]#, '--remove-files', 'True']
 
                         MergerProducer_cmd.extend(local_inputs)
                         if 'btagShape' in self.global_params['corrections']:
