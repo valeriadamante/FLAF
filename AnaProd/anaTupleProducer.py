@@ -122,8 +122,7 @@ def createAnatuple(
     processors_cfg, processor_instances = setup.get_processors(
         process_name, stage="AnaTuple", create_instances=True
     )
-    if len(processors_cfg) == 0:
-        processor_instances["default"] = DefaultAnaCacheProcessor()
+    processor_instances["default"] = DefaultAnaCacheProcessor()
     Corrections.initializeGlobal(
         global_params=setup.global_params,
         stage="AnaTuple",
