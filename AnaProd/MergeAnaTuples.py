@@ -81,6 +81,7 @@ def combineAnaCaches(anaCaches, processors):
                     )
                 entries = []
                 for anaCache in anaCaches:
+                    print(anaCache)
                     if (
                         source in anaCache["denominator"]
                         and scale in anaCache["denominator"][source]
@@ -161,8 +162,7 @@ def mergeAnaTuples(
         processors_cfg, processor_instances = setup.get_processors(
             process_name, stage="AnaTupleMerge", create_instances=True
         )
-        if len(processors_cfg) == 0:
-            processor_instances["default"] = DefaultAnaCacheProcessor()
+        processor_instances["default"] = DefaultAnaCacheProcessor()
         Corrections.initializeGlobal(
             global_params=setup.global_params,
             stage="AnaTupleMerge",
