@@ -125,7 +125,7 @@ def createAnatuple(
     if len(processors_cfg) == 0:
         processor_instances["default"] = DefaultAnaCacheProcessor()
     Corrections.initializeGlobal(
-        global_params=setup.global_params,
+        setup=setup,
         stage="AnaTuple",
         dataset_name=dataset_name,
         dataset_cfg=dataset_cfg,
@@ -202,16 +202,19 @@ def createAnatuple(
                     )
         return rdf
 
-    if tree_not_selected is not None and not isData:
-        genWeight_def = (
-            "std::copysign<float>(1.f, genWeight)"
-            if use_genWeight_sign_only
-            else "genWeight"
-        )
-        df_not_selected = df_not_selected.Define(gen_weight_name, genWeight_def)
-        if "pu" in corrections.to_apply:
-            df_not_selected = corrections.pu.getWeight(df_not_selected)
-        df_not_selected = updateDenomEntry(df_not_selected)
+    if not isData:
+        for data_frame in [df, df_not_selected]:
+            if data_frame is None:
+                continue
+            genWeight_def = (
+                "std::copysign<float>(1.f, genWeight)"
+                if use_genWeight_sign_only
+                else "genWeight"
+            )
+            data_frame = data_frame.Define(gen_weight_name, genWeight_def)
+            if "pu" in corrections.to_apply:
+                data_frame = corrections.pu.getWeight(data_frame)
+            updateDenomEntry(data_frame)
     # if isData: json_dict_for_cache['RunLumi'] = unique_run_lumi
     ROOT.RDF.Experimental.AddProgressBar(df)
     if range is not None:
@@ -328,8 +331,6 @@ def createAnatuple(
             )
             dfw.colToSave.extend(weight_branches)
 
-            if is_central:
-                dfw.df = updateDenomEntry(dfw.df)
         # Analysis anaTupleDef should define a legType as a leg obj
         # But to save with RDF, it needs to be converted to an int
         for leg_name in lepton_legs:
@@ -421,6 +422,7 @@ if __name__ == "__main__":
     parser.add_argument("--nEvents", type=int, default=None)
     parser.add_argument("--evtIds", type=str, default="")
     parser.add_argument("--reportOutput", type=str, default=None)
+    parser.add_argument("--LAWrunVersion", required=True, type=str)
 
     args = parser.parse_args()
 
@@ -428,7 +430,10 @@ if __name__ == "__main__":
     ROOT.gROOT.ProcessLine('#include "include/GenTools.h"')
     ROOT.gInterpreter.ProcessLine(f'ParticleDB::Initialize("{args.particleFile}");')
     setup = Setup.getGlobal(
-        os.environ["ANALYSIS_PATH"], args.period, args.customisations
+        os.environ["ANALYSIS_PATH"],
+        args.period,
+        args.LAWrunVersion,
+        customisations=args.customisations,
     )
 
     channels = setup.global_params["channelSelection"]
